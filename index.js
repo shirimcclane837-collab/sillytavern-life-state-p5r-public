@@ -12,9 +12,9 @@ function report(error) {
 
 function scheduleStart(token) {
   queue = queue.catch(() => {}).then(async () => {
-    if (!desired || token !== epoch || !ready || !context()?.chatId) return;
+    if (!desired || token !== epoch || !ready) return;
     if (controller?.isRunning()) { clearWaiting(); return; }
-    const { createNativeRuntime } = await import('./runtime-31b3f0a55ce14819.js');
+    const { createNativeRuntime } = await import('./src/runtime.js');
     if (!desired || token !== epoch) return;
     if (!controller) controller = createNativeRuntime(globalThis).createController();
     await controller.start();

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Life State · 本地开发预览</title><link rel="stylesheet" href="/src/ui/p5r.css">
+<style>
+html,body { margin:0; height:100%; font:14px/1.6 system-ui,sans-serif; background:#26272d; color:#ccc; }
+header { padding:20px 30px; border-bottom:1px solid #ffffff15; display:flex; justify-content:space-between; }
+main { max-width:680px; margin:90px auto; padding:20px; color:#8d8d95; }
+.mock-controls { display:flex; flex-wrap:wrap; gap:10px; }
+.mock-controls button { background:#35363e; color:#ddd; border:1px solid #ffffff22; padding:8px 15px; cursor:pointer; }
+#chat { min-height:30px; } #send_textarea { width:100%; color:#ccc; background:#292930; border:1px solid #555; }
+</style></head><body>
+<header><strong>LIFE STATE / DEVELOPMENT</strong><span>本地模拟宿主 · 不调用模型</span></header>
+<main><h1>前端开发预览</h1><p>右下方打开角色手册，或选择演示聊天。</p><div class="mock-controls"><button id="demo-a">演示聊天 A</button><button id="demo-b">演示聊天 B</button><button id="home">返回首页</button></div><div id="chat"></div><textarea id="send_textarea" aria-label="模拟聊天输入"></textarea></main>
+<script type="module" src="/tests/fixtures/host.js"></script>
+</body></html>

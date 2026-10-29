@@ -1,19 +1,20 @@
 {
-  "display_name": "角色生理状态引擎 · SillyTavern Life State",
+  "display_name": "角色生理状态引擎 · P5R Edition",
   "loading_order": 100,
   "requires": [],
   "optional": [],
   "dependencies": [],
   "js": "index.js",
-  "author": "koofer-zia",
-  "version": "5.70",
+  "author": "koofer-zia · P5R adaptation: shirimcclane837-collab",
+  "version": "5.71.0",
   "minimum_client_version": "1.18.0",
-  "homePage": "https://github.com/koofer-zia/sillytavern-life-state",
+  "homePage": "https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r",
   "hooks": {
     "activate": "onActivate",
     "enable": "onEnable",
     "disable": "onDisable",
     "delete": "onDelete",
     "update": "onUpdate"
-  }
+  },
+  "css": "src/ui/p5r.css"
 }
