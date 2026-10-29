@@ -4,7 +4,7 @@
 
 **版本：5.71.0 · 非官方派生版本**
 
-[下载安装包](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r/releases/latest) · [反馈问题](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r/issues) · [原版说明](upstream/README-v5.70.md)
+[下载安装包](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/latest) · [反馈问题](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/issues) · [原版说明](upstream/README-v5.70.md)
 
 ![进入聊天前的角色手册](docs/screenshots/welcome.png)
 
@@ -27,12 +27,12 @@
 在酒馆的「扩展 → 安装扩展」中粘贴：
 
 ```text
-https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r
+https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public
 ```
 
 安装后启用并刷新，未进入聊天也应看到悬浮入口。已有聊天继续使用原来的状态记录与设置。
 
-也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r/releases) 下载 `sillytavern-life-state-p5r-5.71.0.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
+也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.71.0.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
 
 **本版提供原生扩展，不提供酒馆助手 JSON 导入文件。** GitHub 自动生成的 Source code 也不是助手脚本。
 
