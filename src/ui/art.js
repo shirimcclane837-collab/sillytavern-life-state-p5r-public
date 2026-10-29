@@ -22,7 +22,9 @@ export function cutoutTitle(text) {
     return `<span class="p5r-cutout-title" aria-label="${escapeText(text)}">${Array.from(text).map((letter, index) => `<span aria-hidden="true" style="--letter-turn:${[-5,4,-2,6,-3,2][index % 6]}deg">${escapeText(letter)}</span>`).join('')}</span>`;
 }
 export function partyStripMarkup(className = '') {
-    return `<div class="p5r-party-strip ${className}" aria-hidden="true">${['ann', 'makoto', 'futaba', 'haru', 'hifumi', 'tae', 'justine'].map(name => portraitMarkup(name)).join('')}</div>`;
+    const members = Object.entries(PORTRAITS).map(([id, name]) => `<span class="p5r-party-member" role="img" aria-label="${name}">${portraitMarkup(id)}</span>`).join('');
+    const group = duplicate => `<div class="p5r-party-group"${duplicate ? ' aria-hidden="true"' : ''}>${members}</div>`;
+    return `<div class="p5r-party-strip ${className}"><div class="p5r-party-window" tabindex="0" role="group" aria-label="女性角色图标，左右拖动或使用方向键浏览" title="左右拖动浏览 · 悬停暂停"><div class="p5r-party-track">${group(true)}${group(false)}${group(true)}</div></div><button class="p5r-party-pause" type="button" aria-label="暂停头像自动滚动" title="暂停自动滚动" aria-pressed="false"><span aria-hidden="true">Ⅱ</span></button></div>`;
 }
 export function pageHeroMarkup({ title, kicker, subtitle, portrait, number }) {
     return `<header class="p5r-page-hero"><div class="p5r-hero-copy"><span class="p5r-eyebrow">${escapeText(kicker)}</span><h2>${cutoutTitle(title)}</h2><p>${escapeText(subtitle)}</p></div><span class="p5r-hero-number" aria-hidden="true">${escapeText(number)}</span><div class="p5r-hero-art" aria-hidden="true">${portraitMarkup(portrait)}</div><span class="p5r-hero-rule" aria-hidden="true"></span></header>`;

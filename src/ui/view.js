@@ -1,5 +1,6 @@
 // Shared presentation behavior. Chat operations remain owned by the runtime.
 import { portraitMarkup, portraitChoicesMarkup, partyStripMarkup, pageHeroMarkup, cutoutTitle } from './art.js';
+import { mountPartyReels } from './party-reels.js';
 const views = new WeakMap();
 const overlays = new WeakMap();
 const markup = new WeakMap();
@@ -102,6 +103,7 @@ function enterScene(view, kind = 'page', direction = 1) {
 export function mountView(panel, onAction) {
     if (views.has(panel)) return;
     const view = { panel, animations: new Map(), scroll: new Map(), key: null, expanded: false, token: 0 };
+    view.reels = mountPartyReels(panel);
     views.set(panel, view);
     const document = panel.ownerDocument;
     const lobby = document.createElement('section');
@@ -146,6 +148,7 @@ export function mountView(panel, onAction) {
     media.addEventListener?.('change', mediaChange);
     view.dispose = () => {
         view.token++;
+        view.reels.dispose();
         mediaChange();
         panel.removeEventListener('click', click, true);
         panel.removeEventListener('keydown', keydown);
@@ -251,6 +254,7 @@ export function setPanelExpanded(panel, expanded, afterLayout) {
             panel.querySelector('.ls-toggle')?.focus({ preventScroll: true });
         });
     }
+    view.reels.sync();
 }
 
 export function updateView(panel, state) {
@@ -308,6 +312,7 @@ export function updateView(panel, state) {
     view.subpage = subpage;
     view.detail = state.detail;
     if (!state.motion) for (const animation of view.animations.values()) animation.cancel();
+    view.reels.sync();
 }
 
 const escape = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -326,7 +331,7 @@ export function lobbyMarkup(state) {
           <p class="p5r-lead">这些设置可以在开始聊天前完成。</p>
           <div class="p5r-preferences"><section><h2>界面与交互</h2>
           <div class="p5r-choice-row"><button type="button" data-action="p5r-theme" data-theme="p5r" aria-pressed="${state.theme === 'p5r'}">P5R · 怪盗红</button><button type="button" data-action="p5r-theme" data-theme="plum" aria-pressed="${state.theme === 'plum'}">暮紫</button></div>
-          <button type="button" class="p5r-motion" data-action="p5r-motion" aria-pressed="${motion}">转场动效 <strong>${motion ? 'ON' : 'OFF'}</strong></button><p class="p5r-hint">开启时也会遵循系统的“减少动态效果”设置。</p>${portraitChoicesMarkup(state.portrait)}</section>
+          <button type="button" class="p5r-motion" data-action="p5r-motion" aria-pressed="${motion}">界面动效 <strong>${motion ? 'ON' : 'OFF'}</strong></button><p class="p5r-hint">控制转场与头像自动滚动，并遵循系统的“减少动态效果”设置；关闭后仍可手动浏览头像。</p>${portraitChoicesMarkup(state.portrait)}</section>
           <form class="p5r-defaults"><h2>新聊天的默认追踪</h2><p class="p5r-hint">只应用于尚未保存过设置的新聊天。</p>
           <div class="p5r-checks">${needs.map(([key, title]) => `<label><input type="checkbox" name="daily" value="${key}" ${defaults.modules.daily_needs.includes(key) ? 'checked' : ''}><span>${title}</span></label>`).join('')}</div>
           <div class="p5r-checks">${[['stamina', '体力'], ['reproductive', '周期与孕期'], ['sexual_desire', '性欲']].map(([key, title]) => `<label><input type="checkbox" name="${key}" ${defaults.modules[key] ? 'checked' : ''}><span>${title}</span></label>`).join('')}</div>

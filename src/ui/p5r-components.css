@@ -33,9 +33,7 @@
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .ls-modern-nav-items button[aria-current=page] { color:white; background:#ed0028; border-color:white; box-shadow:3px 3px 0 #fff; }
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .ls-modern-nav-items button:hover { color:#fff; background:var(--p5r-red); border-color:white; transform:translateX(3px) rotate(-2deg); }
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .ls-modern-nav-items button[aria-current=page]:hover { color:white; background:#ed0028; }
-#life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .p5r-nav-party { display:grid; grid-template-columns:repeat(4,1fr); margin:auto 0 14px; padding:0; gap:0; }
-#life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .p5r-nav-party img { width:100%; height:36px; }
-#life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .p5r-nav-party img:nth-child(n+5) { display:none; }
+#life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .p5r-nav-party { display:block; --p5r-party-size:36px; --p5r-party-gap:9px; --p5r-party-speed:12; margin:auto 0 14px; padding:0; width:100%; }
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .ls-modern-nav-foot { margin-top:0; border:0; text-align:center; color:#aaa; font-size:10px; }
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r].ls-open .ls-body { position:relative; isolation:isolate; padding:22px 27px 32px; background:transparent; }
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r]:not(.ls-open) .ls-shell { background:white; border-color:#000; transform:rotate(-7deg); box-shadow:4px 4px 0 #ed0028; }
@@ -58,8 +56,19 @@
 #life-state-continuity-panel .p5r-hero-number { position:absolute; right:88px; bottom:22px; color:transparent; -webkit-text-stroke:1.5px #ed0028; font:1000 italic 62px/1 Impact,'Arial Black',sans-serif; opacity:.65; }
 #life-state-continuity-panel .p5r-hero-art { position:absolute; right:0; bottom:22px; width:70px; height:78px; }
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] :is(.p5r-nav-party,.p5r-hero-art,.p5r-welcome-mark,.p5r-calling-card) .p5r-portrait { filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 -1px 0 #fff); }
-#life-state-continuity-panel .p5r-party-strip { display:flex; align-items:end; justify-content:space-evenly; gap:8px; }
-#life-state-continuity-panel .p5r-party-strip img { width:12%; height:78px; object-fit:contain; }
+#life-state-continuity-panel .p5r-party-strip { --p5r-party-size:76px; --p5r-party-gap:24px; --p5r-party-speed:18; position:relative; min-width:0; max-width:100%; }
+#life-state-continuity-panel .p5r-party-window { overflow-x:auto; overflow-y:hidden; scrollbar-width:none; scroll-behavior:auto; direction:ltr; touch-action:pan-y; overscroll-behavior-x:contain; cursor:grab; user-select:none; -webkit-user-select:none; padding:3px 0; mask-image:linear-gradient(to right,transparent,#000 8px,#000 calc(100% - 8px),transparent); }
+#life-state-continuity-panel .p5r-party-window::-webkit-scrollbar { display:none; }
+#life-state-continuity-panel .p5r-party-window:focus-visible { outline:1px solid var(--p5r-red); outline-offset:3px; }
+#life-state-continuity-panel .p5r-party-track { display:flex; width:max-content; }
+#life-state-continuity-panel .p5r-party-group { display:flex; flex:none; align-items:end; gap:var(--p5r-party-gap); padding-right:var(--p5r-party-gap); }
+#life-state-continuity-panel .p5r-party-member { display:block; flex:none; width:var(--p5r-party-size); height:var(--p5r-party-size); }
+#life-state-continuity-panel .p5r-party-strip img { width:100%; height:100%; object-fit:contain; }
+#life-state-continuity-panel .p5r-party-strip[data-dragging=true] .p5r-party-window { cursor:grabbing; }
+#life-state-continuity-panel .p5r-party-pause { position:absolute; right:0; bottom:0; display:grid; place-items:center; width:24px; height:24px; padding:0; background:#080808e6; color:white; cursor:pointer; font:800 13px/1 system-ui,sans-serif; opacity:0; }
+#life-state-continuity-panel .p5r-party-pause[hidden] { display:none; }
+#life-state-continuity-panel[data-motion=reduced] .p5r-party-pause { display:none; }
+#life-state-continuity-panel .p5r-party-strip:is(:hover,:focus-within) .p5r-party-pause, #life-state-continuity-panel .p5r-party-pause[aria-pressed=true] { opacity:1; }
 #life-state-continuity-panel .p5r-calling-card { position:relative; margin:34px 0 18px; padding:30px 0 0; color:white; border-top:1px solid #ffffff45; }
 #life-state-continuity-panel .p5r-calling-label { position:absolute; left:0; top:-15px; color:#fff; background:#080808; padding:5px 12px 5px 0; font-size:11px; font-weight:900; letter-spacing:.15em; }
 #life-state-continuity-panel .p5r-calling-caption { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:14px; margin-top:7px; border-top:1px solid #ffffff45; color:#aaa; font-size:11px; }
@@ -219,8 +228,7 @@
   #life-state-continuity-panel .p5r-welcome-mark { right:0; top:-12px; width:70px; height:70px; }
   #life-state-continuity-panel .p5r-welcome-mark img { width:50px; height:50px; margin:0 auto; }
   #life-state-continuity-panel .p5r-calling-card { padding:25px 0 0; margin:30px 0 18px; }
-  #life-state-continuity-panel .p5r-party-strip { gap:3px; }
-  #life-state-continuity-panel .p5r-party-strip img { height:43px; }
+  #life-state-continuity-panel .p5r-party-strip { --p5r-party-size:48px; --p5r-party-gap:16px; --p5r-party-speed:12; }
   #life-state-continuity-panel .p5r-calling-label { font-size:8px; padding:5px 7px; letter-spacing:.08em; }
   #life-state-continuity-panel .p5r-calling-caption { font-size:10px; padding-top:10px; }
   #life-state-continuity-panel .p5r-portrait-options { grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; }
@@ -243,5 +251,6 @@
   #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .ls-play-draft-actions button { flex:1; }
 }
 @media(prefers-reduced-motion:reduce) {
+  #life-state-continuity-panel .p5r-party-pause { display:none; }
   :is(#life-state-continuity-panel,#life-state-daily-picker-panel,#life-state-external-response-panel) *, :is(#life-state-continuity-panel,#life-state-daily-picker-panel,#life-state-external-response-panel) *::before { transition:none!important; animation:none!important; }
 }
