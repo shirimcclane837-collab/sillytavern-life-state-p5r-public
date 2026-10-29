@@ -8,12 +8,12 @@
   color: var(--ls-text); color-scheme: dark;
   font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
-#life-state-continuity-panel .p5r-cut { position:absolute; inset:0; z-index:9; pointer-events:none; opacity:0; background:var(--p5r-red,#bc3c60); width:70%; }
+#life-state-continuity-panel .p5r-scene-ink { display:none; }
 #life-state-continuity-panel .ls-shell { position:relative; isolation:isolate; }
 #life-state-continuity-panel .p5r-close { display:none; }
 #life-state-continuity-panel.ls-open .p5r-close { display:flex; align-items:center; justify-content:center; width:38px; height:38px; font-size:28px; line-height:1; cursor:pointer; flex:none; }
 #life-state-continuity-panel .p5r-lobby[hidden] { display:none!important; }
-#life-state-continuity-panel[data-chat-state]:not([data-chat-state=ready]) .ls-body > :not(.p5r-lobby) { display:none!important; }
+#life-state-continuity-panel[data-chat-state]:not([data-chat-state=ready]) .ls-body > :not(.p5r-lobby,.p5r-scene-ink) { display:none!important; }
 #life-state-continuity-panel[data-chat-state]:not([data-chat-state=ready]) .p5r-lobby { display:block!important; }
 #life-state-continuity-panel .p5r-lobby { position:relative; min-height:100%; padding:35px 16px 12px; color:var(--ls-text); }
 #life-state-continuity-panel .p5r-eyebrow { font-size:10px; font-weight:800; letter-spacing:.2em; color:var(--p5r-gold,var(--ls-accent)); margin-bottom:25px; }
@@ -136,7 +136,7 @@
 #life-state-continuity-panel.ls-modern[data-ui-theme=p5r] .p5r-lobby .p5r-primary:focus-visible { clip-path:none; }
 :is(#life-state-daily-picker-panel,#life-state-external-response-panel).ls-modern[data-ui-theme=p5r] > * { background:var(--ls-bg); border:2px solid var(--p5r-paper); border-radius:2px; color:var(--ls-text); box-shadow:6px 6px 0 var(--p5r-red); }
 #life-state-inline-panel.ls-modern[data-ui-theme=p5r] { background:var(--ls-bg); border:1px solid var(--ls-line); border-top:3px solid var(--p5r-red); border-radius:1px; }
-#life-state-continuity-panel[data-motion=reduced] *, #life-state-continuity-panel[data-motion=reduced] *::before, #life-state-continuity-panel[data-motion=reduced] *::after { animation:none!important; transition:none!important; }
+:is(#life-state-continuity-panel,#life-state-daily-picker-panel,#life-state-external-response-panel)[data-motion=reduced] *, :is(#life-state-continuity-panel,#life-state-daily-picker-panel,#life-state-external-response-panel)[data-motion=reduced] *::before, :is(#life-state-continuity-panel,#life-state-daily-picker-panel,#life-state-external-response-panel)[data-motion=reduced] *::after { animation:none!important; transition:none!important; }
 
 @media(max-width:900px) {
   #life-state-continuity-panel.ls-modern[data-ui-theme=p5r].ls-open .ls-shell { grid-template-columns:150px minmax(0,1fr); }

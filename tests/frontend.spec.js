@@ -102,6 +102,55 @@ test('existing light/ink themes migrate to P5R and OS reduced motion disables an
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
 });
 
+test('navigation has directional artwork motion while reading surfaces remain opaque and stationary', async ({ page }) => {
+    await open(page);
+    await page.evaluate(() => window.fixture.chat('chat-b', { sample: true }));
+    await settle(page);
+    await expect(page.locator(panel)).toHaveAttribute('data-motion', 'full');
+    for (const [destination, direction] of [['play', 1], ['people', -1]]) {
+        const result = await page.evaluate(destination => {
+            document.querySelector(`[data-action=modern-page][data-ui-page=${destination}]`).click();
+            const root = document.querySelector('#life-state-continuity-panel');
+            const body = root.querySelector('.ls-body');
+            const title = [...root.querySelectorAll('.p5r-hero-copy')].find(element => element.getClientRects().length);
+            const animations = document.getAnimations();
+            const motion = animations.find(animation => animation.effect?.target === title);
+            if (!motion) return null;
+            const positions = [];
+            for (const time of [0, 90, 160, 300]) {
+                for (const animation of animations) { animation.pause(); animation.currentTime = time; }
+                const rect = body.getBoundingClientRect();
+                positions.push({ x: rect.x, y: rect.y, opacity: getComputedStyle(body).opacity });
+            }
+            motion.currentTime = 0;
+            const start = title.getBoundingClientRect().x;
+            motion.finish();
+            const end = title.getBoundingClientRect().x;
+            for (const animation of animations) animation.finish();
+            return { start, end, positions };
+        }, destination);
+        expect(result).not.toBeNull();
+        expect((result.start - result.end) * direction).toBeGreaterThan(5);
+        expect(result.positions.every(position => position.opacity === '1')).toBe(true);
+        expect(new Set(result.positions.map(position => `${position.x},${position.y}`)).size).toBe(1);
+    }
+});
+
+test('chat loading and data refresh do not replay navigation animations', async ({ page }) => {
+    await open(page);
+    await page.evaluate(() => window.fixture.chat('chat-b', { sample: true }));
+    await settle(page);
+    const updates = await page.evaluate(async () => {
+        for (let i = 0; i < 4; i++) window.LifeStateContinuity.refreshStatePanel();
+        const refreshed = document.getAnimations().length;
+        await window.fixture.chat(null);
+        const disconnected = document.getAnimations().length;
+        await window.fixture.chat('chat-a', { sample: true });
+        return [refreshed, disconnected, document.getAnimations().length];
+    });
+    expect(updates).toEqual([0, 0, 0]);
+});
+
 test('a pending old chat cannot repopulate the panel after returning home', async ({ page }) => {
     await open(page);
     await page.evaluate(async () => {
@@ -152,7 +201,7 @@ test('daily picker animates, saves changes, and returns keyboard focus when dism
     await expect(page.locator('[data-action=daily]')).toBeFocused();
 });
 
-test('female party icon selection persists in the entry and transition art', async ({ page }) => {
+test('female party icon selection persists in the entry and welcome art', async ({ page }) => {
     await open(page);
     await page.locator(nav('settings')).click();
     await page.locator('[data-action=p5r-portrait][data-portrait=haru]').click();
@@ -161,13 +210,13 @@ test('female party icon selection persists in the entry and transition art', asy
     await expect(page.locator('.p5r-entry-art img')).toHaveAttribute('src', /party\/haru\.png$/);
     await page.locator(`${panel} .ls-toggle`).click();
     await page.locator(nav('people')).click();
-    await expect(page.locator('.p5r-cut-copy img')).toHaveAttribute('src', /party\/haru\.png$/);
+    await expect(page.locator('.p5r-welcome-mark img')).toHaveAttribute('src', /party\/haru\.png$/);
     const female = ['ann', 'makoto', 'futaba', 'haru', 'hifumi', 'tae', 'sadayo', 'chihaya', 'ichiko', 'justine', 'caroline'];
     const used = await page.locator(`${panel} .p5r-portrait`).evaluateAll(images => images.map(img => img.src.split('/').pop().replace('.png', '')));
     expect(used.every(name => female.includes(name))).toBe(true);
 });
 
-test('character editing remains operable through the cutout transition and saves a changed stage', async ({ page }) => {
+test('character editing remains operable during navigation and saves a changed stage', async ({ page }) => {
     await open(page);
     await page.evaluate(() => window.fixture.chat('chat-a', { sample: true }));
     await page.locator(nav('people')).click();

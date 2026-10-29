@@ -35,29 +35,73 @@ function animate(view, key, element, frames, options) {
 }
 
 const fullMask = 'polygon(0 0,100% 0,100% 100%,0 100%)';
-const slitMask = 'polygon(0 0,0 0,0 100%,0 100%)';
+const closedMask = 'polygon(0 0,0 0,0 100%,0 100%)';
+const pages = ['status', 'people', 'play', 'settings'];
 function isP5r(panel) { return panel.classList.contains('ls-modern') && panel.dataset.uiTheme === 'p5r'; }
-function cutTransition(view, label) {
-    const cut = view.panel.querySelector('.p5r-cut');
-    updateMarkup(cut, `<div class="p5r-cut-black"></div><div class="p5r-cut-paper"></div><div class="p5r-cut-copy">${portraitMarkup(view.portrait)}<strong>${escape(label)}</strong><span>★ TAKE YOUR TIME ★</span></div>`);
-    animate(view, 'cut', cut, [
-        { transform: 'translateX(-135%) skewX(-12deg)', opacity: 1 },
-        { transform: 'translateX(-12%) skewX(-12deg)', opacity: 1, offset: .36 },
-        { transform: 'translateX(10%) skewX(-12deg)', opacity: 1, offset: .5 },
-        { transform: 'translateX(135%) skewX(-12deg)', opacity: 1 },
-    ], { duration: 360, easing: 'cubic-bezier(.76,0,.24,1)' });
+
+function cancelScene(view) {
+    for (const [key, animation] of view.animations) {
+        if (!key.startsWith('scene-')) continue;
+        animation.cancel();
+        view.animations.delete(key);
+    }
 }
 
-function enterContent(view, key, element, delay = 0) {
-    // Keep the scrollport and form hit targets stationary. The separate diagonal
-    // wipe and card layers carry the P5R movement without moving a live input.
-    if (element?.classList.contains('ls-body')) return animate(view, key, element,
-        [{ opacity: .45 }, { opacity: 1 }], { duration: 260 });
-    return animate(view, key, element, isP5r(view.panel) ? [
-        { opacity: 0, transform: 'translateX(50px) skewX(-6deg)', clipPath: slitMask },
-        { opacity: 1, transform: 'translateX(-3px) skewX(1deg)', clipPath: fullMask, offset: .8 },
-        { opacity: 1, transform: 'translateX(0) skewX(0)', clipPath: fullMask },
-    ] : [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 260, delay });
+function visibleElement(view, root, selector) {
+    const viewport = view.panel.querySelector('.ls-body').getBoundingClientRect();
+    return [...root.querySelectorAll(selector)].find(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.width && rect.height && rect.bottom > viewport.top && rect.top < viewport.bottom;
+    });
+}
+
+// A scene is the existing page artwork, never a separate screen-sized wipe.
+// Background, title and illustration resolve in that order. Forms and reading
+// surfaces stay fully opaque and keep their hit targets throughout the sequence.
+function enterScene(view, kind = 'page', direction = 1) {
+    cancelScene(view);
+    if (!canAnimate(view.panel)) return;
+    const body = view.panel.querySelector('.ls-body');
+    const detail = kind === 'detail' && visibleElement(view, body, '.ls-profile-editor,.ls-play-draft');
+    const scope = detail || body;
+    const hero = visibleElement(view, scope, '.p5r-page-hero');
+    const title = visibleElement(view, hero || scope, '.p5r-hero-copy,.p5r-heading,.p5r-editor-title > .p5r-cutout-title,.ls-play-draft > h4');
+    const illustration = visibleElement(view, hero || scope, '.p5r-hero-art,.p5r-welcome-mark img,.p5r-editor-title > img');
+    const major = kind === 'page' || kind === 'open';
+    const distance = major ? 24 : 12;
+
+    if (major && isP5r(view.panel)) {
+        animate(view, 'scene-ink', body.querySelector('.p5r-scene-ink'), [
+            { translate: `${-direction * 36}px 0` }, { translate: '0 0' },
+        ], { duration: 260 });
+    }
+    animate(view, 'scene-title', title, [
+        { translate: `${direction * distance}px 0`, opacity: .35 },
+        { translate: '0 0', opacity: 1 },
+    ], { duration: major ? 210 : 150, delay: major ? 25 : 0, fill: 'backwards' });
+    if (illustration && major) {
+        // Individual transform properties preserve the illustration's printed tilt.
+        animate(view, 'scene-portrait', illustration, [
+            { translate: `${-direction * 24}px 5px`, rotate: `${-direction * 5}deg` },
+            { translate: '0 0', rotate: '0deg' },
+        ], { duration: 240, delay: 45, fill: 'backwards' });
+    }
+    const rule = hero?.querySelector('.p5r-hero-rule');
+    if (rule) {
+        rule.style.transformOrigin = direction > 0 ? 'left center' : 'right center';
+        animate(view, 'scene-rule', rule, [{ scale: '.35 1' }, { scale: '1 1' }],
+            { duration: 160, delay: major ? 85 : 35, fill: 'backwards' });
+    }
+    if (kind === 'open') {
+        view.panel.querySelectorAll('.ls-modern-nav-items button > span').forEach((label, index) => {
+            animate(view, `scene-nav-${index}`, label,
+                [{ translate: '-10px 0', opacity: .4 }, { translate: '0 0', opacity: 1 }],
+                { duration: 140, delay: 25 + index * 25, fill: 'backwards' });
+        });
+    } else if (kind === 'page') {
+        animate(view, 'scene-nav-selected', view.panel.querySelector('.ls-modern-nav-items [aria-current=page] > span'),
+            [{ translate: `${-direction * 6}px 0` }, { translate: '0 0' }], { duration: 130 });
+    }
 }
 
 export function mountView(panel, onAction) {
@@ -65,10 +109,10 @@ export function mountView(panel, onAction) {
     const view = { panel, animations: new Map(), scroll: new Map(), key: null, expanded: false, token: 0 };
     views.set(panel, view);
     const document = panel.ownerDocument;
-    const cut = document.createElement('div');
-    cut.className = 'p5r-cut';
-    cut.setAttribute('aria-hidden', 'true');
-    panel.querySelector('.ls-shell').append(cut);
+    const ink = document.createElement('div');
+    ink.className = 'p5r-scene-ink';
+    ink.setAttribute('aria-hidden', 'true');
+    panel.querySelector('.ls-body').prepend(ink);
     const lobby = document.createElement('section');
     lobby.className = 'p5r-lobby';
     panel.querySelector('.ls-body').prepend(lobby);
@@ -101,17 +145,9 @@ export function mountView(panel, onAction) {
     };
     const body = panel.querySelector('.ls-body');
     const scroll = () => { if (view.key) view.scroll.set(view.key, body.scrollTop); };
-    const toggle = event => {
-        const details = event.target;
-        if (!details.matches?.('details[open]') || !view.expanded || !isP5r(panel)) return;
-        for (const [index, child] of [...details.children].filter(child => child.tagName !== 'SUMMARY').entries()) {
-            enterContent(view, `disclosure-${index}`, child);
-        }
-    };
     panel.addEventListener('click', click, true);
     panel.addEventListener('keydown', keydown);
     body.addEventListener('scroll', scroll, { passive: true });
-    panel.addEventListener('toggle', toggle, true);
     const media = document.defaultView.matchMedia('(prefers-reduced-motion: reduce)');
     const mediaChange = () => {
         for (const animation of view.animations.values()) animation.cancel();
@@ -123,7 +159,6 @@ export function mountView(panel, onAction) {
         panel.removeEventListener('click', click, true);
         panel.removeEventListener('keydown', keydown);
         body.removeEventListener('scroll', scroll);
-        panel.removeEventListener('toggle', toggle, true);
         media.removeEventListener?.('change', mediaChange);
     };
 }
@@ -135,14 +170,25 @@ export function disposeView(panel) {
 
 export function disposeOverlay(overlay) {
     const state = overlays.get(overlay);
-    if (state) { state.token++; state.animation?.cancel(); }
+    if (state) {
+        state.token++;
+        state.animation?.cancel();
+        state.media.removeEventListener?.('change', state.mediaChange);
+    }
     overlays.delete(overlay);
 }
 
 export function renderOverlay(overlay, { open, className, html, motion }) {
     let state = overlays.get(overlay);
-    if (!state) { state = { open: false, token: 0, animation: null }; overlays.set(overlay, state); }
+    if (!state) {
+        state = { open: false, token: 0, animation: null };
+        state.media = overlay.ownerDocument.defaultView.matchMedia('(prefers-reduced-motion: reduce)');
+        state.mediaChange = () => state.animation?.cancel();
+        state.media.addEventListener?.('change', state.mediaChange);
+        overlays.set(overlay, state);
+    }
     overlay.dataset.motion = motion ? 'full' : 'reduced';
+    if (!canAnimate(overlay)) state.animation?.cancel();
     overlay.setAttribute('aria-hidden', String(!open));
     overlay.inert = !open;
     if (state.open === open) { if (open) updateMarkup(overlay, html); return; }
@@ -161,17 +207,16 @@ export function renderOverlay(overlay, { open, className, html, motion }) {
     };
     if (!dialog || !canAnimate(overlay)) { finish(); return; }
     const frames = isP5r(overlay) ? (open ? [
-        { opacity: 0, transform: 'translateX(60px) rotate(-3deg)', clipPath: slitMask },
-        { opacity: 1, transform: 'translateX(-4px) rotate(.7deg)', clipPath: fullMask, offset: .8 },
-        { opacity: 1, transform: 'translateX(0) rotate(0)', clipPath: fullMask },
-    ] : [{ opacity: 1, transform: 'translateX(0)', clipPath: fullMask }, { opacity: 0, transform: 'translateX(-40px)', clipPath: slitMask }]) : open ? [
+        { opacity: .7, boxShadow: '3px 3px 0 #ed0028,5px 5px 0 #000' },
+        { opacity: 1, boxShadow: '9px 9px 0 #ed0028,12px 12px 0 #000' },
+    ] : [{ opacity: 1 }, { opacity: 0 }]) : open ? [
         { opacity: 0, transform: 'translateY(18px) scale(.98)' },
         { opacity: 1, transform: 'translateY(0) scale(1)' },
     ] : [
         { opacity: 1, transform: 'translateY(0) scale(1)' },
         { opacity: 0, transform: 'translateY(10px) scale(.98)' },
     ];
-    state.animation = dialog.animate(frames, { duration: open ? 260 : 160, easing: 'cubic-bezier(.22,1,.36,1)' });
+    state.animation = dialog.animate(frames, { duration: open ? 170 : 110, easing: 'cubic-bezier(.22,1,.36,1)' });
     state.animation.finished.catch(() => {}).then(finish);
 }
 
@@ -180,6 +225,7 @@ export function setPanelExpanded(panel, expanded, afterLayout) {
     if (!view) { panel.classList.toggle('ls-open', expanded); return; }
     if (view.expanded === expanded) return;
     view.expanded = expanded;
+    cancelScene(view);
     const token = ++view.token;
     const shell = panel.querySelector('.ls-shell');
     const body = panel.querySelector('.ls-body');
@@ -192,23 +238,22 @@ export function setPanelExpanded(panel, expanded, afterLayout) {
         panel.classList.remove('p5r-closing');
         afterLayout?.();
         animate(view, 'window', shell, isP5r(panel) ? [
-            { opacity: 0, transform: 'translate(30px,20px) rotate(-2deg) scale(.94)', clipPath: slitMask },
-            { opacity: 1, transform: 'translate(-3px,0) rotate(.4deg) scale(1)', clipPath: fullMask, offset: .8 },
-            { opacity: 1, transform: 'translate(0,0) rotate(0) scale(1)', clipPath: fullMask },
+            { clipPath: closedMask },
+            { clipPath: fullMask },
         ] : [
             { opacity: 0, transform: 'translateY(18px) scale(.96)' },
             { opacity: 1, transform: 'translateY(0) scale(1)' },
-        ], { duration: 340 });
-        if (isP5r(panel)) cutTransition(view, 'LIFE STATE');
+        ], { duration: 220 });
+        enterScene(view, 'open');
     } else {
         panel.classList.add('p5r-closing');
         animate(view, 'window', shell, isP5r(panel) ? [
-            { opacity: 1, transform: 'translateX(0) skewX(0)', clipPath: fullMask },
-            { opacity: 0, transform: 'translateX(-30px) skewX(5deg)', clipPath: slitMask },
+            { clipPath: fullMask },
+            { clipPath: closedMask },
         ] : [
             { opacity: 1, transform: 'translateY(0) scale(1)' },
             { opacity: 0, transform: 'translateY(12px) scale(.97)' },
-        ], { duration: 160 }).then(() => {
+        ], { duration: 140 }).then(() => {
             if (token !== view.token || !panel.isConnected) return;
             panel.classList.remove('ls-open', 'p5r-closing');
             afterLayout?.();
@@ -248,25 +293,28 @@ export function updateView(panel, state) {
     for (const child of panel.querySelector('.ls-body').children) {
         if (child !== lobby) child.inert = chatState !== 'ready';
     }
-    const key = `${state.chatIdentity}/${chatState}/${state.page}/${state.page === 'settings' ? state.settingsPage : state.subpage}/${state.character || ''}`;
+    const context = `${state.chatIdentity}/${chatState}`;
+    const subpage = state.page === 'settings' ? state.settingsPage : state.subpage;
+    const key = `${context}/${state.page}/${subpage}/${state.character || ''}`;
     const body = panel.querySelector('.ls-body');
     if (view.key !== key) {
         // Each page owns its scroll position; async data refreshes do not reset it.
         body.scrollTop = view.scroll.get(key) || 0;
-        if (view.key && view.expanded) {
-            enterContent(view, 'page', body);
-            if (isP5r(panel)) {
-                const labels = { status: 'STATUS', people: 'CONFIDANTS', play: 'PLAYBOOK', settings: 'SYSTEM' };
-                cutTransition(view, labels[state.page] || 'LIFE STATE');
-                for (const [key, animation] of view.animations) if (key.startsWith('item-')) animation.cancel();
-                const cards = [...body.querySelectorAll('.ls-play-category,.ls-character-profile-card,.ls-settings-entry,.ls-modern-need')].filter(el => el.getClientRects().length).slice(0, 8);
-                cards.forEach((element, index) => enterContent(view, `item-${index}`, element, 50 + index * 18));
+        cancelScene(view);
+        if (view.context === context && view.expanded) {
+            if (view.page !== state.page) {
+                enterScene(view, 'page', pages.indexOf(state.page) < pages.indexOf(view.page) ? -1 : 1);
+            } else if (view.subpage !== subpage) {
+                enterScene(view, 'section', !subpage || subpage === 'home' ? -1 : 1);
             }
         }
         view.key = key;
-    } else if (view.detail !== state.detail && view.expanded) {
-        enterContent(view, 'detail', panel.querySelector('.ls-profile-editor,.ls-play-draft'));
+    } else if (view.detail !== state.detail && view.expanded && view.context === context) {
+        enterScene(view, 'detail');
     }
+    view.context = context;
+    view.page = state.page;
+    view.subpage = subpage;
     view.detail = state.detail;
     if (!state.motion) for (const animation of view.animations.values()) animation.cancel();
 }
