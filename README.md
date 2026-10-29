@@ -2,9 +2,9 @@
 
 基于 [koofer-zia/sillytavern-life-state](https://github.com/koofer-zia/sillytavern-life-state) v5.70 的前端改版，面向 SillyTavern / TauriTavern 原生扩展。让角色手册在进入聊天前就准备就绪，以黑白剪纸、红色斜面、Q 版队员图标与怪盗风格转场重新组织界面。
 
-**版本：5.71.1 · 非官方派生版本**
+**版本：5.71.2 · 非官方派生版本**
 
-5.71.1 重做动效：删除盖屏三色遮罩与逐卡片乱序入场，改成背景、标题、女性图标按层次落位。动效仍默认开启；正文与表单不位移、不闪暗，数据刷新不重播页面演出。
+5.71.2 修复电脑展开窗口难以拖动的问题：标题栏空白处也能拖动，松手不会误触收起，入口与展开窗口分别记住位置。延续 5.71.1 的分层动效；正文与表单不位移、不闪暗，数据刷新不重播页面演出。
 
 [下载安装包](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/latest) · [反馈问题](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/issues) · [原版说明](upstream/README-v5.70.md)
 
@@ -17,6 +17,7 @@
 - **女性 Q 版图标**：使用参考项目里的黑白图标，装饰入口、菜单、欢迎页与页头；设置里可以切换入口和欢迎页图标。全部为女性角色，不使用彩色立绘，不改动聊天人物头像。
 - **分层动效**：窗口展开边界、背景红色斜面、拼贴标题与女性插图按顺序落位。前进与返回方向相反，二级页使用局部反馈；输入、勾选和数据刷新不重播导航。连续点击会取消过期动画；支持关闭动效并遵循系统的减少动态效果设置。详见[动效设计与参考](docs/motion.md)。
 - **保留操作上下文**：各页保留滚动位置，编辑草稿与输入焦点在刷新时恢复。转场中的表单保持固定点击位置。
+- **桌面窗口拖动**：按住顶部标题栏文字或空白处移动，关闭与设置按钮保留点击功能。拖动不会误触收起；入口与展开窗口分别保存位置，刷新后恢复，调整浏览器大小时限制在可见范围内。
 - **手机适配**：窄屏底部导航、单列内容和独立滚动，兼顾横屏与小屏。
 - **界面与聊天分别管理**：切换聊天立即清理旧人物展示，显示读取中或失败重试；退出聊天仍保留入口，停用扩展时释放窗口、事件和动画。
 
@@ -34,7 +35,7 @@ https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public
 
 安装后启用并刷新，未进入聊天也应看到悬浮入口。已有聊天继续使用原来的状态记录与设置。
 
-也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.71.1.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
+也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.71.2.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
 
 **本版提供原生扩展，不提供酒馆助手 JSON 导入文件。** GitHub 自动生成的 Source code 也不是助手脚本。
 
@@ -46,7 +47,7 @@ https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public
 4. 在「状态」页查看角色状态，在「玩法」页选择分类、编辑搭配并选择应用角色。
 5. 在「设置 → 运行模式」选择内置、外接协作或外接独立分析；外接模型使用原有 API 设置流程。
 
-「设置 → 界面外观」可以切换主题、图标、动效、入口大小，以及悬浮或正文下显示。点击关闭按钮或按 Escape 收起手册，按住入口可以拖动。
+「设置 → 界面外观」可以切换主题、图标、动效、入口大小，以及悬浮或正文下显示。点击关闭按钮或按 Escape 收起手册。按住入口可拖动；电脑上展开后，按住顶部白色标题栏的文字或空白处可移动窗口。两种状态的位置分别保存，拖动时会限制在屏幕范围内。
 
 更新时使用扩展管理器更新并刷新。手动安装时替换整个扩展文件夹，避免混用不同版本的入口、运行文件和样式。停用扩展不会清除聊天记录。
 
@@ -91,13 +92,14 @@ npm run preview
 | `src/ui/p5r.css` | 样式入口，加载基础布局与完整组件适配 |
 | `src/ui/assets/` | 黑白图标与来源说明 |
 | `tests/frontend.spec.js` | 浏览器交互与生命周期回归测试 |
+| `tests/dragging.spec.js` | 桌面拖动、位置恢复、边界与触摸入口回归测试 |
 | `tests/fixtures/` | 模拟宿主、示例状态和本地 API 桩 |
 | `scripts/build.mjs` | 可安装目录和 SHA-256 文件清单 |
 | `upstream/` | 原版 README 与 v5.70 签名档案 |
 
-修改受完整性检查保护的运行函数后，先审查修改，再执行 `npm run integrity` 更新**派生版本**的函数指纹，随后运行 `npm run check` 与 `npm test`。`npm run build` 将安装文件和 `checksums.json` 输出到 `release/sillytavern-life-state-p5r-5.71.1/`。
+修改受完整性检查保护的运行函数后，先审查修改，再执行 `npm run integrity` 更新**派生版本**的函数指纹，随后运行 `npm run check` 与 `npm test`。`npm run build` 将安装文件和 `checksums.json` 输出到 `release/sillytavern-life-state-p5r-5.71.2/`。
 
-17 项 Chromium 测试覆盖无聊天启动、默认设置、聊天切换、启停、输入草稿和焦点、快速导航、动画中断、减少动效、旧异步操作失效、失败重试、弹窗保存、图标持久化、人物编辑保存、六个玩法分类与应用角色，以及桌面和三种小屏尺寸。新增检查前进与返回的动效方向、阅读区域位置与透明度，以及数据刷新不触发转场；主要页面另做截图和连续录屏检查。
+22 项 Chromium 测试覆盖无聊天启动、默认设置、聊天切换、启停、输入草稿和焦点、快速导航、动画中断、减少动效、旧异步操作失效、失败重试、弹窗保存、图标持久化、人物编辑保存、六个玩法分类与应用角色，以及桌面和三种小屏尺寸。动效测试检查前进与返回方向、阅读区域位置与透明度，以及数据刷新不触发转场。5.71.2 新增标题栏空白处拖动、拖后点击、独立位置保存与刷新恢复、屏幕边缘与窗口缩放、失去焦点，以及 Chromium 原生触摸事件模拟的入口拖动和取消测试；手机触摸未做真机验证。
 
 适配基线沿用上游的 SillyTavern 1.18.0 原生接口，并核对了 TauriTavern 扩展加载接口。**本次验证未包含真实模型调用，也未完成 TauriTavern 原生桌面应用端到端运行**；这些场景需要在实际宿主中验证。
 
