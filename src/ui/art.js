@@ -22,8 +22,8 @@ export function cutoutTitle(text) {
     return `<span class="p5r-cutout-title" aria-label="${escapeText(text)}">${Array.from(text).map((letter, index) => `<span aria-hidden="true" style="--letter-turn:${[-5,4,-2,6,-3,2][index % 6]}deg">${escapeText(letter)}</span>`).join('')}</span>`;
 }
 export function partyStripMarkup(className = '') {
-    return `<div class="p5r-party-strip ${className}" aria-hidden="true">${['justine', 'ann', 'makoto', 'futaba', 'haru', 'hifumi', 'tae'].map(name => portraitMarkup(name)).join('')}</div>`;
+    return `<div class="p5r-party-strip ${className}" aria-hidden="true">${['ann', 'makoto', 'futaba', 'haru', 'hifumi', 'tae', 'justine'].map(name => portraitMarkup(name)).join('')}</div>`;
 }
 export function pageHeroMarkup({ title, kicker, subtitle, portrait, number }) {
-    return `<header class="p5r-page-hero"><div class="p5r-hero-copy"><span class="p5r-eyebrow">${escapeText(kicker)}</span><h2>${cutoutTitle(title)}</h2><p>${escapeText(subtitle)}</p></div><span class="p5r-hero-number" aria-hidden="true">${escapeText(number)}</span><div class="p5r-hero-art" aria-hidden="true">${portraitMarkup(portrait)}<span>TAKE YOUR TIME</span></div><span class="p5r-hero-rule" aria-hidden="true"></span></header>`;
+    return `<header class="p5r-page-hero"><div class="p5r-hero-copy"><span class="p5r-eyebrow">${escapeText(kicker)}</span><h2>${cutoutTitle(title)}</h2><p>${escapeText(subtitle)}</p></div><span class="p5r-hero-number" aria-hidden="true">${escapeText(number)}</span><div class="p5r-hero-art" aria-hidden="true">${portraitMarkup(portrait)}</div><span class="p5r-hero-rule" aria-hidden="true"></span></header>`;
 }

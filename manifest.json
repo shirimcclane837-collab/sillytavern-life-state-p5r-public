@@ -6,7 +6,7 @@
   "dependencies": [],
   "js": "index.js",
   "author": "koofer-zia · P5R adaptation: shirimcclane837-collab",
-  "version": "5.71.2",
+  "version": "5.71.3",
   "minimum_client_version": "1.18.0",
   "homePage": "https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public",
   "hooks": {

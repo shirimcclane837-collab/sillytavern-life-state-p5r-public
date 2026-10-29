@@ -1252,7 +1252,7 @@ NSFW 场景：开始、延续、结束或无变化${effectsLine}${conceptionLine
   const AUTHOR_COPYRIGHT_NOTICE = '架构与路由机制设计：koofer（类脑社区） · GitHub: koofer-zia。未经作者署名许可，禁止修改后重新发布。';
   const AUTHOR_ZERO_WIDTH_WATERMARK = 'k\u200bo\u200bo\u200bf\u200be\u200br\u200b-\u200bz\u200bi\u200ba\u200b classbrain\u200b';
   const AUTHOR_INTEGRITY_VERSION = 'P5R_DERIVED_INTEGRITY_V1';
-  const AUTHOR_INTEGRITY_EXPECTED_SHA256 = 'd06a6bade491ecf7a9b39d1da1cf22fd108a42cb8a473e10dc7cfc0d89345983';
+  const AUTHOR_INTEGRITY_EXPECTED_SHA256 = 'baa09f01be1fdfa6ff53e8cd891d870e87c7ef6eb0b218a3f13bf7dfe1fd5864';
 
   function buildSignature() {
     try {
@@ -25084,7 +25084,7 @@ ${all} :is(button,input,select,textarea):disabled { opacity:1; color:#687b92; bo
     runtime.debugExternalPseudoStatus = 'idle';
     runtime.debugExternalPseudoError = '';
     try {
-      console.info(`[LifeState P5R] 5.71.2 派生版 · 原作者 ${buildSignature()}（类脑）`);
+      console.info(`[LifeState P5R] 5.71.3 派生版 · 原作者 ${buildSignature()}（类脑）`);
     } catch (_) {   }
     ensureStatePanel();
     refreshStatePanel();

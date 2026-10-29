@@ -56,7 +56,7 @@ function visibleElement(view, root, selector) {
 }
 
 // A scene is the existing page artwork, never a separate screen-sized wipe.
-// Background, title and illustration resolve in that order. Forms and reading
+// Title and illustration resolve in that order. Forms and reading
 // surfaces stay fully opaque and keep their hit targets throughout the sequence.
 function enterScene(view, kind = 'page', direction = 1) {
     cancelScene(view);
@@ -70,11 +70,6 @@ function enterScene(view, kind = 'page', direction = 1) {
     const major = kind === 'page' || kind === 'open';
     const distance = major ? 24 : 12;
 
-    if (major && isP5r(view.panel)) {
-        animate(view, 'scene-ink', body.querySelector('.p5r-scene-ink'), [
-            { translate: `${-direction * 36}px 0` }, { translate: '0 0' },
-        ], { duration: 260 });
-    }
     animate(view, 'scene-title', title, [
         { translate: `${direction * distance}px 0`, opacity: .35 },
         { translate: '0 0', opacity: 1 },
@@ -109,10 +104,6 @@ export function mountView(panel, onAction) {
     const view = { panel, animations: new Map(), scroll: new Map(), key: null, expanded: false, token: 0 };
     views.set(panel, view);
     const document = panel.ownerDocument;
-    const ink = document.createElement('div');
-    ink.className = 'p5r-scene-ink';
-    ink.setAttribute('aria-hidden', 'true');
-    panel.querySelector('.ls-body').prepend(ink);
     const lobby = document.createElement('section');
     lobby.className = 'p5r-lobby';
     panel.querySelector('.ls-body').prepend(lobby);
@@ -343,7 +334,7 @@ export function lobbyMarkup(state) {
     }
     const locked = page === 'people' || page === 'play';
     return `<div class="p5r-welcome-collage"><div class="p5r-eyebrow">LIFE STATE / STANDBY</div>
-      <div class="p5r-welcome-mark" aria-hidden="true"><span>★</span>${portraitMarkup(state.portrait)}<strong>TAKE<br>YOUR TIME</strong></div>
+      <div class="p5r-welcome-mark" aria-hidden="true">${portraitMarkup(state.portrait)}</div>
       <h1 class="p5r-heading">${locked ? (page === 'people' ? `${cutoutTitle('人物档案')}<br><em>每个人，都有故事。</em>` : `${cutoutTitle('下一场故事')}<br><em>从这里做好准备。</em>`) : `${cutoutTitle('故事还未开始。')}<br><em>${cutoutTitle('手册已经就绪。')}</em>`}</h1>
       <p class="p5r-lead">${locked ? '进入聊天后，即可管理当前对话的人物与玩法。' : '打开任意聊天，人物档案与身体状态会自动出现在这里。<br>现在就可以调整界面和新聊天的默认设置。'}</p>
       <button type="button" class="p5r-primary" data-action="p5r-settings">打开设置 <span aria-hidden="true">↗</span></button>

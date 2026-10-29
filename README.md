@@ -1,10 +1,10 @@
 # 角色生理状态引擎 · P5R Edition
 
-基于 [koofer-zia/sillytavern-life-state](https://github.com/koofer-zia/sillytavern-life-state) v5.70 的前端改版，面向 SillyTavern / TauriTavern 原生扩展。让角色手册在进入聊天前就准备就绪，以黑白剪纸、红色斜面、Q 版队员图标与怪盗风格转场重新组织界面。
+基于 [koofer-zia/sillytavern-life-state](https://github.com/koofer-zia/sillytavern-life-state) v5.70 的前端改版，面向 SillyTavern / TauriTavern 原生扩展。让角色手册在进入聊天前就准备就绪，以统一深色底面、黑白剪纸、红色操作反馈、女性 Q 版图标与怪盗风格转场重新组织界面。
 
-**版本：5.71.2 · 非官方派生版本**
+**版本：5.71.3 · 非官方派生版本**
 
-5.71.2 修复电脑展开窗口难以拖动的问题：标题栏空白处也能拖动，松手不会误触收起，入口与展开窗口分别记住位置。延续 5.71.1 的分层动效；正文与表单不位移、不闪暗，数据刷新不重播页面演出。
+5.71.3 统一窗口背景与头像构图：移除白色顶栏、红色装饰角块、独立头像相框，以及玩法和设置中交替出现的白色底板。女性图标改为小幅黑白剪影，红色集中在选中状态与操作反馈；保留分层动效及 5.71.2 的桌面拖动、独立位置记忆。
 
 [下载安装包](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/latest) · [反馈问题](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/issues) · [原版说明](upstream/README-v5.70.md)
 
@@ -13,9 +13,9 @@
 ## 本次改进
 
 - **入口随宿主启动出现**：未选择聊天也能打开欢迎页，提前调整主题、动效和新聊天默认追踪项目。
-- **完整的黑白红主题**：拼贴字块、粗轮廓、反相选择、红色斜面、星形与网点背景。状态、人物、玩法、设置、二级分类、人物编辑器、应用角色和弹窗均做适配。
-- **女性 Q 版图标**：使用参考项目里的黑白图标，装饰入口、菜单、欢迎页与页头；设置里可以切换入口和欢迎页图标。全部为女性角色，不使用彩色立绘，不改动聊天人物头像。
-- **分层动效**：窗口展开边界、背景红色斜面、拼贴标题与女性插图按顺序落位。前进与返回方向相反，二级页使用局部反馈；输入、勾选和数据刷新不重播导航。连续点击会取消过期动画；支持关闭动效并遵循系统的减少动态效果设置。详见[动效设计与参考](docs/motion.md)。
+- **完整的黑白红主题**：顶栏、侧栏与内容共用深色底面和细微网点纹理，白色承载拼贴文字与轮廓，红色标识当前导航与操作状态。状态、人物、玩法、设置、二级分类、人物编辑器、应用角色和弹窗均做适配。
+- **女性 Q 版图标**：使用参考项目里的黑白图标，装饰入口、菜单、欢迎页与页头。页头和侧栏使用透明底剪影，以细白边融入背景；设置里可以切换入口和欢迎页图标。全部为女性角色，不使用彩色立绘，不改动聊天人物头像。
+- **分层动效**：窗口展开边界、拼贴标题与女性插图按顺序落位，底面保持稳定。前进与返回方向相反，二级页使用局部反馈；输入、勾选和数据刷新不重播导航。连续点击会取消过期动画；支持关闭动效并遵循系统的减少动态效果设置。详见[动效设计与参考](docs/motion.md)。
 - **保留操作上下文**：各页保留滚动位置，编辑草稿与输入焦点在刷新时恢复。转场中的表单保持固定点击位置。
 - **桌面窗口拖动**：按住顶部标题栏文字或空白处移动，关闭与设置按钮保留点击功能。拖动不会误触收起；入口与展开窗口分别保存位置，刷新后恢复，调整浏览器大小时限制在可见范围内。
 - **手机适配**：窄屏底部导航、单列内容和独立滚动，兼顾横屏与小屏。
@@ -35,7 +35,7 @@ https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public
 
 安装后启用并刷新，未进入聊天也应看到悬浮入口。已有聊天继续使用原来的状态记录与设置。
 
-也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.71.2.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
+也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.71.3.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
 
 **本版提供原生扩展，不提供酒馆助手 JSON 导入文件。** GitHub 自动生成的 Source code 也不是助手脚本。
 
@@ -55,7 +55,9 @@ https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public
 
 截图使用本仓库的浏览器模拟宿主和示例人物，不包含真实聊天，也不调用模型。
 
-[桌面动效录屏](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/download/v5.71.1/motion-desktop.mp4) · [手机动效录屏](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/download/v5.71.1/motion-mobile.mp4) · [手机人物编辑器](docs/screenshots/mobile-editor.png)
+[桌面动效录屏](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/download/v5.71.3/motion-desktop.mp4) · [手机动效录屏](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/download/v5.71.3/motion-mobile.mp4) · [手机人物编辑器](docs/screenshots/mobile-editor.png)
+
+![统一背景与头像构图](docs/screenshots/status.png)
 
 ![玩法库](docs/screenshots/play.png)
 
@@ -97,7 +99,7 @@ npm run preview
 | `scripts/build.mjs` | 可安装目录和 SHA-256 文件清单 |
 | `upstream/` | 原版 README 与 v5.70 签名档案 |
 
-修改受完整性检查保护的运行函数后，先审查修改，再执行 `npm run integrity` 更新**派生版本**的函数指纹，随后运行 `npm run check` 与 `npm test`。`npm run build` 将安装文件和 `checksums.json` 输出到 `release/sillytavern-life-state-p5r-5.71.2/`。
+修改受完整性检查保护的运行函数后，先审查修改，再执行 `npm run integrity` 更新**派生版本**的函数指纹，随后运行 `npm run check` 与 `npm test`。`npm run build` 将安装文件和 `checksums.json` 输出到 `release/sillytavern-life-state-p5r-5.71.3/`。
 
 22 项 Chromium 测试覆盖无聊天启动、默认设置、聊天切换、启停、输入草稿和焦点、快速导航、动画中断、减少动效、旧异步操作失效、失败重试、弹窗保存、图标持久化、人物编辑保存、六个玩法分类与应用角色，以及桌面和三种小屏尺寸。动效测试检查前进与返回方向、阅读区域位置与透明度，以及数据刷新不触发转场。5.71.2 新增标题栏空白处拖动、拖后点击、独立位置保存与刷新恢复、屏幕边缘与窗口缩放、失去焦点，以及 Chromium 原生触摸事件模拟的入口拖动和取消测试；手机触摸未做真机验证。
 
