@@ -19,6 +19,7 @@ try {
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         const shot = async filename => {
+            await page.evaluate(() => document.fonts.ready);
             await settle(page);
             if (filename) await page.screenshot({ path: path.join(screenshots, filename + '.png') });
             await page.waitForTimeout(650);
@@ -30,7 +31,7 @@ try {
         await page.goto('http://127.0.0.1:4173');
         await page.waitForFunction(() => window.extension?.getStatus().running);
         await page.locator(`${panel} .ls-toggle`).click();
-        await shot(name === 'desktop' ? 'welcome' : null);
+        await shot(name === 'desktop' ? 'welcome' : 'welcome-mobile');
         await page.evaluate(() => window.fixture.chat('chat-b', { sample: true }));
         await shot(name === 'desktop' ? 'status' : 'mobile');
         await navigate('people', name === 'desktop' ? 'people' : null);

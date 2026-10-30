@@ -1,2 +1,5 @@
 @import url('./p5r-base.css');
 @import url('./p5r-components.css');
+@import url('./generated/tailwind.css');
+@import url('./royal.css');
+@import url('./queen.css');

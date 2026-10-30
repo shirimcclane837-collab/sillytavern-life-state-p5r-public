@@ -1,0 +1,5 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(phantom);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(phantom);
+@source "./menu.jsx";
+/* No preflight: host styles and other extensions stay outside this build. */

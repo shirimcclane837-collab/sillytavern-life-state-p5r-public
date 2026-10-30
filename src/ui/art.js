@@ -7,6 +7,7 @@ export const PORTRAITS = Object.freeze({
 });
 export const normalizePortrait = value => Object.hasOwn(PORTRAITS, value) ? value : 'futaba';
 export const portraitUrl = name => new URL(`./assets/party/${normalizePortrait(name)}.png`, import.meta.url).href;
+export const queenArtUrl = new URL('./assets/makoto-menu.png', import.meta.url).href;
 export function loadPortrait(storage) {
     try { return normalizePortrait(storage?.getItem(PORTRAIT_KEY)); }
     catch { return 'futaba'; }
@@ -19,13 +20,13 @@ export function portraitChoicesMarkup(selected) {
     return `<fieldset class="p5r-portrait-picker"><legend>Q 版怪盗图标</legend><p class="p5r-hint">选择悬浮入口和欢迎页使用的黑白图标。</p><div class="p5r-portrait-options">${Object.entries(PORTRAITS).map(([id, name]) => `<button type="button" data-action="p5r-portrait" data-portrait="${id}" aria-pressed="${selected === id}" aria-label="${name}">${portraitMarkup(id)}<span>${name}</span></button>`).join('')}</div></fieldset>`;
 }
 export function cutoutTitle(text) {
-    return `<span class="p5r-cutout-title" aria-label="${escapeText(text)}">${Array.from(text).map((letter, index) => `<span aria-hidden="true" style="--letter-turn:${[-5,4,-2,6,-3,2][index % 6]}deg">${escapeText(letter)}</span>`).join('')}</span>`;
+    return `<span class="p5r-cutout-title" data-p5r-component="ransom" data-text="${escapeText(text)}">${escapeText(text)}</span>`;
 }
 export function partyStripMarkup(className = '') {
     const members = Object.entries(PORTRAITS).map(([id, name]) => `<span class="p5r-party-member" role="img" aria-label="${name}">${portraitMarkup(id)}</span>`).join('');
     const group = duplicate => `<div class="p5r-party-group"${duplicate ? ' aria-hidden="true"' : ''}>${members}</div>`;
     return `<div class="p5r-party-strip ${className}"><div class="p5r-party-window" tabindex="0" role="group" aria-label="女性角色图标，左右拖动或使用方向键浏览" title="左右拖动浏览 · 悬停暂停"><div class="p5r-party-track">${group(true)}${group(false)}${group(true)}</div></div><button class="p5r-party-pause" type="button" aria-label="暂停头像自动滚动" title="暂停自动滚动" aria-pressed="false"><span aria-hidden="true">Ⅱ</span></button></div>`;
 }
-export function pageHeroMarkup({ title, kicker, subtitle, portrait, number }) {
-    return `<header class="p5r-page-hero"><div class="p5r-hero-copy"><span class="p5r-eyebrow">${escapeText(kicker)}</span><h2>${cutoutTitle(title)}</h2><p>${escapeText(subtitle)}</p></div><span class="p5r-hero-number" aria-hidden="true">${escapeText(number)}</span><div class="p5r-hero-art" aria-hidden="true">${portraitMarkup(portrait)}</div><span class="p5r-hero-rule" aria-hidden="true"></span></header>`;
+export function pageHeroMarkup(props) {
+    return `<header class="p5r-page-hero" data-p5r-component="hero" data-props="${escapeText(JSON.stringify(props))}"></header>`;
 }

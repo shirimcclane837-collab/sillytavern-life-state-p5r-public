@@ -114,7 +114,8 @@ test('navigation has directional artwork motion while reading surfaces remain op
             const body = root.querySelector('.ls-body');
             const title = [...root.querySelectorAll('.p5r-hero-copy')].find(element => element.getClientRects().length);
             const animations = document.getAnimations();
-            const motion = animations.find(animation => animation.effect?.target === title);
+            const motion = animations.find(animation => animation.effect?.target === title
+                && animation.effect.getKeyframes().some(frame => frame.transform));
             if (!motion) return null;
             const positions = [];
             for (const time of [0, 90, 160, 300]) {

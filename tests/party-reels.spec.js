@@ -124,7 +124,7 @@ test.describe('female portrait reels', () => {
         await settle(page);
         expect(await position(page, sidebar)).toBe(before);
         await page.mouse.move(1, 1);
-        await page.setViewportSize({ width: 1280, height: 620 });
+        await page.setViewportSize({ width: 1280, height: 420 });
         await settle(page);
         await expect(page.locator(sidebar)).toBeHidden();
         await expect(page.locator(welcome)).not.toBeInViewport();

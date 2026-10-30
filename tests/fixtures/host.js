@@ -1,3 +1,5 @@
+import { createFixtureFormatter } from './formatter.js';
+const formatter = createFixtureFormatter();
 const listeners = new Map();
 let ready = false;
 const bus = {
@@ -16,11 +18,16 @@ const eventTypes = new Proxy({}, { get: (_, name) => name });
 const ctx = {
     eventSource: bus, eventTypes, chatId: null, characterId: null, groupId: null,
     chat: [], chatMetadata: {}, characters: [], groups: [], name1: '旅行者', name2: '',
-    extensionSettings: { regex: [] }, extensionPrompts: {},
-    saveMetadata: async () => {}, saveSettingsDebounced() {}, saveSettings: async () => {},
+    extensionSettings: { regex: window.fixtureRegex || [] }, extensionPrompts: {},
+    messageFormatter: new URLSearchParams(location.search).has('legacy-host') ? undefined : formatter,
+    saveMetadata: async () => {}, saveSettingsDebounced() { window.fixtureSettingsSaves = (window.fixtureSettingsSaves || 0) + 1; }, saveSettings: async () => {},
     getRequestHeaders: () => ({ 'Content-Type': 'application/json' }),
     setExtensionPrompt(id, value, position, depth, scan, role) { ctx.extensionPrompts[id] = { value, position, depth, scan, role }; },
-    updateMessageBlock() {},
+    updateMessageBlock(id, message) {
+        let row = document.querySelector(`#chat .mes[mesid="${id}"]`);
+        if (!row) { row = document.createElement('div'); row.className = 'mes'; row.setAttribute('mesid', id); document.getElementById('chat').append(row); }
+        row.innerHTML = `<div class="mes_text">${formatter.format(message.mes, { isUser: !!message.is_user, isSystem: !!message.is_system, isReasoning: false, messageId: id }, ctx.extensionSettings.regex)}</div>`;
+    },
 };
 window.SillyTavern = { getContext: () => ctx };
 window.toastr = { warning: message => console.warn(message), error: message => console.error(message), success() {}, info() {} };
@@ -37,7 +44,7 @@ window.fetch = async (input, options) => {
     return nativeFetch(input, options);
 };
 window.fixture = {
-    ctx, bus, listeners,
+    ctx, bus, listeners, formatter,
     async chat(id, { sample = false } = {}) {
         ctx.chatId = id;
         ctx.characterId = id ? 0 : null;
@@ -56,6 +63,8 @@ window.fixture = {
             ctx.chatMetadata.variables = { [core.CONFIG.variableKey]: { modules, snapshot, external_defaults_version: '5.67' } };
             ctx.chat = [{ mes: `清晨，${ctx.name2}走进了咖啡店。\n${core.formatCanonicalBlock(snapshot)}`, is_user: false, is_system: false, name: ctx.name2 }];
         }
+        document.getElementById('chat').replaceChildren();
+        for (const [index, message] of ctx.chat.entries()) ctx.updateMessageBlock(index, message);
         await bus.emit('CHAT_CHANGED', id);
     },
 };

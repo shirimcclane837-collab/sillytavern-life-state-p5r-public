@@ -1,5 +1,7 @@
+import { mountReactScene, hydrateReactParts, disposeReactWithin, animateElement } from './generated/menu.js';
+import { syncLayers } from './layers.js';
 // Shared presentation behavior. Chat operations remain owned by the runtime.
-import { portraitMarkup, portraitChoicesMarkup, partyStripMarkup, pageHeroMarkup, cutoutTitle } from './art.js';
+import { portraitMarkup, pageHeroMarkup } from './art.js';
 import { mountPartyReels } from './party-reels.js';
 const views = new WeakMap();
 const overlays = new WeakMap();
@@ -8,6 +10,7 @@ export const MOTION_KEY = 'life-state-p5r-motion-v1';
 
 export function updateMarkup(element, html) {
     if (!element || markup.get(element) === html) return;
+    disposeReactWithin(element);
     element.innerHTML = html;
     markup.set(element, html);
 }
@@ -28,7 +31,7 @@ function animate(view, key, element, frames, options) {
     view.animations.get(key)?.cancel();
     view.animations.delete(key);
     if (!canAnimate(view.panel) || !element) return Promise.resolve();
-    const animation = element.animate(frames, { easing: 'cubic-bezier(.22,1,.36,1)', ...options });
+    const animation = animateElement(element, frames, options);
     view.animations.set(key, animation);
     return animation.finished.catch(() => {}).finally(() => {
         if (view.animations.get(key) === animation) view.animations.delete(key);
@@ -62,41 +65,42 @@ function visibleElement(view, root, selector) {
 function enterScene(view, kind = 'page', direction = 1) {
     cancelScene(view);
     if (!canAnimate(view.panel)) return;
+    if (isP5r(view.panel)) view.scene.pulse(direction);
     const body = view.panel.querySelector('.ls-body');
     const detail = kind === 'detail' && visibleElement(view, body, '.ls-profile-editor,.ls-play-draft');
     const scope = detail || body;
     const hero = visibleElement(view, scope, '.p5r-page-hero');
-    const title = visibleElement(view, hero || scope, '.p5r-hero-copy,.p5r-heading,.p5r-editor-title > .p5r-cutout-title,.ls-play-draft > h4');
+    const title = visibleElement(view, hero || scope, '.p5r-hero-copy,.p5r-heading,.p5r-editor-title .p5r-cutout-title,.ls-play-draft h4');
     const illustration = visibleElement(view, hero || scope, '.p5r-hero-art,.p5r-welcome-mark img,.p5r-editor-title > img');
     const major = kind === 'page' || kind === 'open';
     const distance = major ? 24 : 12;
-
+    if (title) title.style.transformOrigin = direction > 0 ? 'left center' : 'right center';
     animate(view, 'scene-title', title, [
-        { translate: `${direction * distance}px 0`, opacity: .35 },
-        { translate: '0 0', opacity: 1 },
+        { x: direction * distance, scale: major ? 1.4 : 1.08, opacity: 0 },
+        { x: 0, scale: 1, opacity: 1 },
     ], { duration: major ? 210 : 150, delay: major ? 25 : 0, fill: 'backwards' });
     if (illustration && major) {
         // Individual transform properties preserve the illustration's printed tilt.
         animate(view, 'scene-portrait', illustration, [
-            { translate: `${-direction * 24}px 5px`, rotate: `${-direction * 5}deg` },
-            { translate: '0 0', rotate: '0deg' },
+            { x: -direction * 24, y: 5, rotate: -direction * 5 },
+            { x: 0, y: 0, rotate: 0 },
         ], { duration: 240, delay: 45, fill: 'backwards' });
     }
     const rule = hero?.querySelector('.p5r-hero-rule');
     if (rule) {
         rule.style.transformOrigin = direction > 0 ? 'left center' : 'right center';
-        animate(view, 'scene-rule', rule, [{ scale: '.35 1' }, { scale: '1 1' }],
+        animate(view, 'scene-rule', rule, [{ scaleX: .35 }, { scaleX: 1 }],
             { duration: 160, delay: major ? 85 : 35, fill: 'backwards' });
     }
     if (kind === 'open') {
-        view.panel.querySelectorAll('.ls-modern-nav-items button > span').forEach((label, index) => {
+        view.panel.querySelectorAll('.ls-modern-nav-items .p5-nav-label').forEach((label, index) => {
             animate(view, `scene-nav-${index}`, label,
-                [{ translate: '-10px 0', opacity: .4 }, { translate: '0 0', opacity: 1 }],
+                [{ x: -10, opacity: .4 }, { x: 0, opacity: 1 }],
                 { duration: 140, delay: 25 + index * 25, fill: 'backwards' });
         });
     } else if (kind === 'page') {
-        animate(view, 'scene-nav-selected', view.panel.querySelector('.ls-modern-nav-items [aria-current=page] > span'),
-            [{ translate: `${-direction * 6}px 0` }, { translate: '0 0' }], { duration: 130 });
+        animate(view, 'scene-nav-selected', view.panel.querySelector('.ls-modern-nav-items [aria-current=page] .p5-nav-label'),
+            [{ x: -direction * 6 }, { x: 0 }], { duration: 130 });
     }
 }
 
@@ -123,6 +127,7 @@ export function mountView(panel, onAction) {
     close.setAttribute('aria-label', '收起角色手册');
     close.innerHTML = '<span aria-hidden="true">×</span>';
     panel.querySelector('.ls-bar').append(close);
+    view.scene = mountReactScene(panel);
     const click = event => {
         const target = event.target.closest('[data-action^="p5r-"]');
         if (!target) return;
@@ -138,9 +143,11 @@ export function mountView(panel, onAction) {
     };
     const body = panel.querySelector('.ls-body');
     const scroll = () => { if (view.key) view.scroll.set(view.key, body.scrollTop); };
+    const detailsToggle = () => syncLayers(panel);
     panel.addEventListener('click', click, true);
     panel.addEventListener('keydown', keydown);
     body.addEventListener('scroll', scroll, { passive: true });
+    panel.addEventListener('toggle', detailsToggle, true);
     const media = document.defaultView.matchMedia('(prefers-reduced-motion: reduce)');
     const mediaChange = () => {
         for (const animation of view.animations.values()) animation.cancel();
@@ -149,10 +156,12 @@ export function mountView(panel, onAction) {
     view.dispose = () => {
         view.token++;
         view.reels.dispose();
+        view.scene.dispose();
         mediaChange();
         panel.removeEventListener('click', click, true);
         panel.removeEventListener('keydown', keydown);
         body.removeEventListener('scroll', scroll);
+        panel.removeEventListener('toggle', detailsToggle, true);
         media.removeEventListener?.('change', mediaChange);
     };
 }
@@ -169,6 +178,7 @@ export function disposeOverlay(overlay) {
         state.animation?.cancel();
         state.media.removeEventListener?.('change', state.mediaChange);
     }
+    disposeReactWithin(overlay);
     overlays.delete(overlay);
 }
 
@@ -185,13 +195,14 @@ export function renderOverlay(overlay, { open, className, html, motion }) {
     if (!canAnimate(overlay)) state.animation?.cancel();
     overlay.setAttribute('aria-hidden', String(!open));
     overlay.inert = !open;
-    if (state.open === open) { if (open) updateMarkup(overlay, html); return; }
+    if (state.open === open) { if (open) { updateMarkup(overlay, html); hydrateReactParts(overlay); syncLayers(overlay); } return; }
     state.open = open;
     const token = ++state.token;
     state.animation?.cancel();
     if (open) {
         overlay.classList.add(className);
         updateMarkup(overlay, html);
+        hydrateReactParts(overlay); syncLayers(overlay);
     }
     const dialog = overlay.querySelector('[role=dialog]');
     const finish = () => {
@@ -201,8 +212,8 @@ export function renderOverlay(overlay, { open, className, html, motion }) {
     };
     if (!dialog || !canAnimate(overlay)) { finish(); return; }
     const frames = isP5r(overlay) ? (open ? [
-        { opacity: .7, boxShadow: '3px 3px 0 #ed0028,5px 5px 0 #000' },
-        { opacity: 1, boxShadow: '9px 9px 0 #ed0028,12px 12px 0 #000' },
+        { opacity: .7, boxShadow: '3px 3px 0 #E60012,5px 5px 0 #000' },
+        { opacity: 1, boxShadow: '9px 9px 0 #E60012,12px 12px 0 #000' },
     ] : [{ opacity: 1 }, { opacity: 0 }]) : open ? [
         { opacity: 0, transform: 'translateY(18px) scale(.98)' },
         { opacity: 1, transform: 'translateY(0) scale(1)' },
@@ -210,7 +221,7 @@ export function renderOverlay(overlay, { open, className, html, motion }) {
         { opacity: 1, transform: 'translateY(0) scale(1)' },
         { opacity: 0, transform: 'translateY(10px) scale(.98)' },
     ];
-    state.animation = dialog.animate(frames, { duration: open ? 170 : 110, easing: 'cubic-bezier(.22,1,.36,1)' });
+    state.animation = dialog.animate(frames, { duration: open ? 170 : 110, easing: 'cubic-bezier(.16,1,.3,1)' });
     state.animation.finished.catch(() => {}).then(finish);
 }
 
@@ -265,6 +276,7 @@ export function updateView(panel, state) {
     updateMarkup(panel.querySelector('.p5r-entry-art'), portraitMarkup(state.portrait));
     const chatState = state.loading ? 'loading' : state.error ? 'error' : state.available ? 'ready' : 'empty';
     panel.dataset.chatState = chatState;
+    panel.dataset.scene = chatState === 'empty' && state.page !== 'settings' ? 'menu' : 'reading';
     for (const columns of panel.querySelectorAll('.ls-modern-columns')) {
         const secondary = columns.querySelector('.ls-modern-secondary');
         columns.classList.toggle('p5r-single-column', !secondary?.textContent.trim());
@@ -277,8 +289,10 @@ export function updateView(panel, state) {
         : { title: '作战准备', kicker: 'SYSTEM / MAKE IT YOURS', subtitle: '让每一次行动，都按你的节奏。', portrait: 'futaba', number: '04' }));
     const defaultsForm = lobby.querySelector('.p5r-defaults');
     if (defaultsForm) view.defaultsDraft = [...defaultsForm.querySelectorAll('input')].map(input => ({ name: input.name, value: input.value, checked: input.checked }));
+    view.scene.sync({ ...state, chatState });
+    syncLayers(panel);
     lobby.hidden = chatState === 'ready';
-    if (chatState !== 'ready') updateMarkup(lobby, lobbyMarkup({ ...state, chatState }));
+
     if (view.defaultsDraft) {
         for (const input of lobby.querySelectorAll('.p5r-defaults input')) {
             const draft = view.defaultsDraft.find(item => item.name === input.name && item.value === input.value);
@@ -313,36 +327,4 @@ export function updateView(panel, state) {
     view.detail = state.detail;
     if (!state.motion) for (const animation of view.animations.values()) animation.cancel();
     view.reels.sync();
-}
-
-const escape = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-
-export function lobbyMarkup(state) {
-    const { page, chatState, defaults, motion } = state;
-    if (chatState === 'loading' || chatState === 'error') return `
-      <div class="p5r-eyebrow">LIFE STATE / ${chatState === 'error' ? 'RECONNECT' : 'CONNECTING'}</div>
-      <h1 class="p5r-heading">${chatState === 'error' ? '暂时无法读取聊天' : '正在读取角色档案'}</h1>
-      <p class="p5r-lead" role="status">${chatState === 'error' ? escape(state.error) : '正在载入当前对话，马上就好。'}</p>
-      ${chatState === 'error' ? '<button type="button" class="p5r-primary" data-action="p5r-retry">重新读取</button>' : '<div class="p5r-loading" aria-hidden="true"></div>'}`;
-    if (page === 'settings') {
-        const needs = [['drink', '饮水'], ['meal', '进食'], ['urination', '排尿'], ['bowel_movement', '排便'], ['sleep', '睡眠']];
-        return `<div class="p5r-eyebrow">YOUR RULES / GLOBAL SETTINGS</div>
-          <h1 class="p5r-heading">先把手册调成你的样子。</h1>
-          <p class="p5r-lead">这些设置可以在开始聊天前完成。</p>
-          <div class="p5r-preferences"><section><h2>界面与交互</h2>
-          <div class="p5r-choice-row"><button type="button" data-action="p5r-theme" data-theme="p5r" aria-pressed="${state.theme === 'p5r'}">P5R · 怪盗红</button><button type="button" data-action="p5r-theme" data-theme="plum" aria-pressed="${state.theme === 'plum'}">暮紫</button></div>
-          <button type="button" class="p5r-motion" data-action="p5r-motion" aria-pressed="${motion}">界面动效 <strong>${motion ? 'ON' : 'OFF'}</strong></button><p class="p5r-hint">控制转场与头像自动滚动，并遵循系统的“减少动态效果”设置；关闭后仍可手动浏览头像。</p>${portraitChoicesMarkup(state.portrait)}</section>
-          <form class="p5r-defaults"><h2>新聊天的默认追踪</h2><p class="p5r-hint">只应用于尚未保存过设置的新聊天。</p>
-          <div class="p5r-checks">${needs.map(([key, title]) => `<label><input type="checkbox" name="daily" value="${key}" ${defaults.modules.daily_needs.includes(key) ? 'checked' : ''}><span>${title}</span></label>`).join('')}</div>
-          <div class="p5r-checks">${[['stamina', '体力'], ['reproductive', '周期与孕期'], ['sexual_desire', '性欲']].map(([key, title]) => `<label><input type="checkbox" name="${key}" ${defaults.modules[key] ? 'checked' : ''}><span>${title}</span></label>`).join('')}</div>
-          <button type="button" class="p5r-primary" data-action="p5r-save-defaults">保存默认设置 <span aria-hidden="true">↗</span></button><p class="p5r-feedback" role="status"></p></form></div>`;
-    }
-    const locked = page === 'people' || page === 'play';
-    return `<div class="p5r-welcome-collage"><div class="p5r-eyebrow">LIFE STATE / STANDBY</div>
-      <div class="p5r-welcome-mark" aria-hidden="true">${portraitMarkup(state.portrait)}</div>
-      <h1 class="p5r-heading">${locked ? (page === 'people' ? `${cutoutTitle('人物档案')}<br><em>每个人，都有故事。</em>` : `${cutoutTitle('下一场故事')}<br><em>从这里做好准备。</em>`) : `${cutoutTitle('故事还未开始。')}<br><em>${cutoutTitle('手册已经就绪。')}</em>`}</h1>
-      <p class="p5r-lead">${locked ? '进入聊天后，即可管理当前对话的人物与玩法。' : '打开任意聊天，人物档案与身体状态会自动出现在这里。<br>现在就可以调整界面和新聊天的默认设置。'}</p>
-      <button type="button" class="p5r-primary" data-action="p5r-settings">打开设置 <span aria-hidden="true">↗</span></button>
-      <div class="p5r-welcome-footer"><span class="p5r-online-dot"></span> 已就绪 <span>选择聊天后自动连接</span></div></div>
-      <div class="p5r-calling-card"><span class="p5r-calling-label">THE PHANTOM THIEVES</span>${partyStripMarkup()}<span class="p5r-calling-caption">每一个故事，都值得认真对待。<b>LET'S GET STARTED ↗</b></span></div>`;
 }

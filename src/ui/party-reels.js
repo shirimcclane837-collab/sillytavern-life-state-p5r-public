@@ -21,6 +21,17 @@ export function mountPartyReels(panel) {
         if (!length || !reel.width) return;
         const fraction = reel.length ? reel.offset / reel.length : 0;
         reel.length = length;
+        // A compact row can be wider than all eleven icons combined. Keep
+        // enough repeated groups beyond the wrap point so native scrollLeft
+        // never clamps before the next seamless cycle begins.
+        const track = reel.group.parentElement;
+        const copies = Math.max(3, Math.ceil(reel.width / length) + 2);
+        while (track.children.length < copies) {
+            const duplicate = reel.group.cloneNode(true);
+            duplicate.setAttribute('aria-hidden', 'true');
+            track.append(duplicate);
+        }
+        while (track.children.length > copies) track.lastElementChild.remove();
         reel.speed = Number.parseFloat(win.getComputedStyle(reel.element).getPropertyValue('--p5r-party-speed')) || 14;
         place(reel, fraction * length);
     }

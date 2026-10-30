@@ -5,12 +5,13 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
+execFileSync(process.execPath, ['scripts/build-ui.mjs'], { cwd: root, stdio: 'inherit' });
 execFileSync(process.execPath, ['scripts/integrity.mjs'], { cwd: root, stdio: 'inherit' });
 const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
 const output = path.join(root, 'release', `sillytavern-life-state-p5r-${manifest.version}`);
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-for (const name of ['index.js', 'manifest.json', 'README.md', 'src', 'upstream', 'docs']) {
+for (const name of ['index.js', 'manifest.json', 'README.md', 'THIRD_PARTY_NOTICES.md', 'src', 'upstream', 'docs']) {
     await cp(path.join(root, name), path.join(output, name), { recursive: true });
 }
 const files = {};

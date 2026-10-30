@@ -1,0 +1,2 @@
+/*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
+@layer theme;@layer utilities{.phantom\:sr-only{clip-path:inset(50%);white-space:nowrap;border-width:0;width:1px;height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden}.phantom\:relative{position:relative}.phantom\:flex{display:flex}.phantom\:h-full{height:100%}.phantom\:flex-col{flex-direction:column}}
