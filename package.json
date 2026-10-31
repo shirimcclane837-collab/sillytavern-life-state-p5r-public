@@ -1,13 +1,13 @@
 {
   "name": "sillytavern-life-state-p5r",
-  "version": "5.72.0",
+  "version": "5.72.1",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:ui": "node scripts/build-ui.mjs",
     "integrity": "node scripts/integrity.mjs --write",
-    "check": "node --check index.js && node --check src/runtime.js && node --check src/output-visibility.js && node --check src/ui/view.js && node --check src/ui/art.js && node --check src/ui/layers.js && node --check src/ui/party-reels.js && node --check src/ui/generated/menu.js && node scripts/integrity.mjs",
+    "check": "node --check index.js && node --check src/runtime.js && node --check src/output-visibility.js && node --check src/profile-scan.js && node --check src/chat-persistence.js && node --check src/ui/view.js && node --check src/ui/art.js && node --check src/ui/layers.js && node --check src/ui/party-reels.js && node --check src/ui/generated/menu.js && node scripts/integrity.mjs",
     "test": "playwright test",
     "preview": "node scripts/preview.mjs"
   },

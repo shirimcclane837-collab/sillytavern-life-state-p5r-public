@@ -1,0 +1,29 @@
+{
+  "version": 5,
+  "timeline": { "day": 2, "time": "20:15" },
+  "scene": { "nsfw": true, "session_id": 1 },
+  "characters": {
+    "样例人物": {
+      "mode": "detailed",
+      "observed_for": 5,
+      "needs": {
+        "drink": { "stage": "迫切期", "notes": "口干。" },
+        "meal": { "stage": "迫切期", "notes": "尚未进食。" },
+        "urination": { "stage": "关注期" },
+        "bowel_movement": { "stage": "平稳期" },
+        "sleep": { "sleeping": false, "stage": "关注期" }
+      },
+      "effects": {
+        "effect_one": { "name": "持续影响一", "notes": "测试记录一。" },
+        "effect_two": { "name": "持续影响二", "notes": "测试记录二。" },
+        "effect_three": { "name": "持续影响三", "notes": "测试记录三。" },
+        "effect_four": { "name": "持续影响四", "notes": "测试记录四。" }
+      },
+      "stamina_update": {
+        "segments": [{ "activity": "intense", "start": "D2 20:00", "end": "D2 20:15" }],
+        "notes": "活动消耗体力。"
+      },
+      "reproductive": { "menstrual_cycle": { "cycle_day": 14, "phase": "易孕期", "user_awareness": "未知" } }
+    }
+  }
+}
