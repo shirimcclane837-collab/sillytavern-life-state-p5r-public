@@ -2,9 +2,9 @@
 
 基于 [koofer-zia/sillytavern-life-state](https://github.com/koofer-zia/sillytavern-life-state) v5.70 的前端改版，面向 SillyTavern / TauriTavern 原生扩展。角色手册在进入聊天前就准备就绪，以新岛真主题插画、黑白剪纸标题、红色操作反馈和女性 Q 版图标组织界面。
 
-**版本：5.72.1 · 非官方派生版本**
+**版本：5.72.2 · 非官方派生版本**
 
-5.72.1 将操作按钮、卡片和弹窗恢复为规整的直角四边形，保留新岛真插画、黑白红配色和头像滚动。修正 Vertex Gemini 人物扫描的请求参数与兼容重试；保存核对只读取聊天元数据头，支持短暂读取延迟，并直接展示失败原因和本轮保存重试。
+5.72.2 将状态隐藏改为 Markdown 渲染后的隐藏容器，保留格式化结果中的协议文本；状态引擎继续读取聊天原文。“查看返回”显示原文长度和完整状态块数量。沿用 5.72.1 的规整四边形控件、Vertex 扫描参数修正及保存失败重试。
 
 [下载安装包](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases/latest) · [反馈问题](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/issues) · [原版说明](upstream/README-v5.70.md)
 
@@ -39,7 +39,7 @@ https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public
 
 安装后启用并刷新，未进入聊天也应看到悬浮入口。已有聊天继续使用原来的状态记录与设置。
 
-也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.72.1.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
+也可以从 [Releases](https://github.com/shirimcclane837-collab/sillytavern-life-state-p5r-public/releases) 下载 `sillytavern-life-state-p5r-5.72.2.zip`，将其中的整个扩展文件夹放进宿主的第三方扩展目录，再刷新并启用。SillyTavern 常见目录为 `data/<用户>/extensions/`；TauriTavern 的实际目录由应用数据位置决定，优先使用应用内的扩展管理器。
 
 **本版提供原生扩展，不提供酒馆助手 JSON 导入文件。** GitHub 自动生成的 Source code 也不是助手脚本。
 
@@ -98,7 +98,7 @@ npm run preview
 | `src/runtime.js` | 原有引擎、聊天适配、数据与界面编排 |
 | `src/profile-scan.js` | 扫描请求与单次兼容参数隔离 |
 | `src/chat-persistence.js` | 流式读取聊天元数据头 |
-| `src/output-visibility.js` | 正则后的显示隐藏、旧规则迁移与旧宿主 DOM 处理 |
+| `src/output-visibility.js` | Markdown 后的保留文本隐藏、旧规则迁移与旧宿主 DOM 处理 |
 | `src/ui/view.js` | 空状态、转场、动效偏好、滚动位置与窗口行为 |
 | `src/ui/react/menu.jsx` | React 菜单、准备页、RansomText、SVG 与 Motion 场景 |
 | `src/ui/layers.js` | 为原有真实控件添加三层外观，保留表单和事件 |
@@ -118,9 +118,9 @@ npm run preview
 | `scripts/build-ui.mjs` / `scripts/build.mjs` | 前端打包、可安装目录和 SHA-256 文件清单 |
 | `upstream/` | 原版 README 与 v5.70 签名档案 |
 
-修改 React 或 Tailwind 源文件后运行 `npm run build:ui`，并提交生成文件。修改受完整性检查保护的运行函数后，先审查修改，再执行 `npm run integrity` 更新**派生版本**的函数指纹，随后运行 `npm run check` 与 `npm test`。`npm run build` 会重新打包前端，将安装文件和 `checksums.json` 输出到 `release/sillytavern-life-state-p5r-5.72.1/`。
+修改 React 或 Tailwind 源文件后运行 `npm run build:ui`，并提交生成文件。修改受完整性检查保护的运行函数后，先审查修改，再执行 `npm run integrity` 更新**派生版本**的函数指纹，随后运行 `npm run check` 与 `npm test`。`npm run build` 会重新打包前端，将安装文件和 `checksums.json` 输出到 `release/sillytavern-life-state-p5r-5.72.2/`。
 
-45 项回归测试覆盖无聊天启动、默认设置、聊天切换、启停、输入草稿和焦点、快速导航、动画中断、减少动效、旧异步操作失效、失败重试、弹窗保存、图标持久化、人物编辑保存、六个玩法分类与应用角色，以及桌面和三种小屏尺寸。还覆盖桌面拖动、独立位置恢复、屏幕边缘与窗口缩放，以及头像横条的循环衔接、暂停、拖动、横向滚轮、键盘浏览和启停。新增正则测试使用模拟格式化接口与实际 DOMPurify，覆盖原文不变、用户面板保留、旧规则迁移和旧宿主显示。另覆盖 Vertex 请求参数、502 兼容重试、临时钩子清理、旧版变量迁移、阶段型状态块保存、存档头流式读取、延迟读取、切换聊天保护和保存失败后的重试。手机手势使用 Chromium 原生触摸事件模拟，未做真机验证。
+49 项回归测试覆盖无聊天启动、默认设置、聊天切换、启停、输入草稿和焦点、快速导航、动画中断、减少动效、旧异步操作失效、失败重试、弹窗保存、图标持久化、人物编辑保存、六个玩法分类与应用角色，以及桌面和三种小屏尺寸。还覆盖桌面拖动、独立位置恢复、屏幕边缘与窗口缩放，以及头像横条的循环衔接、暂停、拖动、横向滚轮、键盘浏览和启停。正则测试使用模拟宿主注册表、实际 Showdown 与 DOMPurify，覆盖原文和隐藏文本保留、用户面板、旧规则迁移、转义标签及旧宿主显示。状态块独占整条回复时，还验证隐藏后的消息事件处理、保存、聊天重载，以及空白新分支不会误读旧内容。另覆盖 Vertex 请求参数、502 兼容重试、临时钩子清理、旧版变量迁移、阶段型状态块保存、存档头流式读取、延迟读取、切换聊天保护和保存失败后的重试。手机手势使用 Chromium 原生触摸事件模拟，未做真机验证。
 
 适配基线沿用上游的 SillyTavern 1.18.0 原生接口，并核对了 TauriTavern 扩展加载接口。**本次验证未包含真实模型调用，也未完成 TauriTavern 原生桌面应用端到端运行**；这些场景需要在实际宿主中验证；Vertex 请求的参数回归使用模拟接口，未连接真实 GCP 账号。
 

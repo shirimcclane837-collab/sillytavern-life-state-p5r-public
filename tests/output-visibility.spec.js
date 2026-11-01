@@ -17,7 +17,8 @@ test('migrates only its legacy rule and lets a full-message regex see the untouc
     const userRules = [rule('narrative', '/清晨/g', '傍晚'), rule('wrapper', '/^([\\s\\S]*)$/', '<article data-user-widget="">$1</article>'), rule('prompt', '/life_state/g', 'prompt-state', { markdownOnly: false, promptOnly: true })];
     await start(page, [userRules[0], legacy, ...userRules.slice(1)]);
     await expect(page.locator('#chat article')).toContainText('傍晚');
-    await expect(page.locator('#chat .mes_text')).not.toContainText('"version"');
+    await expect(page.locator('#chat .mes_text')).not.toContainText('"version"', { useInnerText: true });
+    await expect(page.locator('#chat .mes_text')).toContainText('<life_state>');
     const result = await page.evaluate(() => ({ rules: window.fixture.ctx.extensionSettings.regex, raw: window.fixture.ctx.chat[0].mes, saves: window.fixtureSettingsSaves }));
     expect(result.rules).toEqual(userRules);
     expect(result.raw).toContain('清晨'); expect(result.raw).toContain('<life_state>');
@@ -39,7 +40,7 @@ test('display hooks are idempotent, leave user/system/preview messages intact, a
     const result = await page.evaluate(async () => {
         const { ctx, formatter } = window.fixture, raw = ctx.chat[0].mes;
         const format = overrides => formatter.format(raw, { isUser: false, isSystem: false, isReasoning: false, messageId: 0, ...overrides }, []);
-        const protectedContexts = [{ isUser: true }, { isSystem: true }, { isReasoning: true }, { messageId: -1 }].map(format);
+        const protectedContexts = [{ isUser: true }, { isSystem: true }, { isReasoning: true }, { messageId: -1 }, { messageId: undefined }].map(format);
         await window.extension.onDisable();
         const disabled = format({});
         window.extension.onEnable();
@@ -48,7 +49,7 @@ test('display hooks are idempotent, leave user/system/preview messages intact, a
     for (const output of [...result.protectedContexts, result.disabled]) expect(output).toContain('"version"');
     await page.waitForFunction(() => window.extension?.getStatus().running);
     await page.evaluate(() => window.fixture.chat('chat-b', { sample: true }));
-    await expect(page.locator('#chat .mes_text')).not.toContainText('"version"');
+    await expect(page.locator('#chat .mes_text')).not.toContainText('"version"', { useInnerText: true });
     expect(await page.evaluate(() => window.fixture.formatter.hooks.length)).toBe(1);
 });
 
@@ -61,7 +62,8 @@ test('edits, swipes and rerenders hide new output without touching the saved mes
         return message.mes;
     });
     await expect(page.locator('#chat .mes_text')).toContainText('雨夜');
-    await expect(page.locator('#chat .mes_text')).not.toContainText('"version"');
+    await expect(page.locator('#chat .mes_text')).not.toContainText('"version"', { useInnerText: true });
+    await expect(page.locator('#chat .mes_text')).toContainText('"version"');
     expect(await page.evaluate(() => window.fixture.ctx.chat[0].mes)).toBe(raw);
 });
 
@@ -89,11 +91,15 @@ test('does not delete edited rules, similarly named rules, or protocol-like HTML
     expect(await page.evaluate(() => window.fixture.ctx.extensionSettings.regex)).toEqual([custom, sameName]);
     await expect(page.locator('#chat .mes_text')).toContainText('已接收');
     const output = await page.evaluate(async () => {
-        const { stripDisplayStateBlocks } = await import('/src/output-visibility.js');
+        const { hideDisplayStateBlocks } = await import('/src/output-visibility.js');
         const prefix = `<div data-template='<life_state>x</life_state>'>正文</div><script>const s='<life_state>literal</life_state>';</script>`;
-        return { prefix, filtered: stripDisplayStateBlocks(`${prefix}<life_state>{"x":1}</life_state><story_time>{"day":1}</story_time>`) };
+        const once = hideDisplayStateBlocks(`${prefix}<life_state>{"x":1}</life_state><story_time>{"day":1}</story_time>`);
+        return { prefix, once, twice: hideDisplayStateBlocks(once) };
     });
-    expect(output.filtered).toBe(output.prefix);
+    expect(output.once.startsWith(output.prefix)).toBe(true);
+    expect(output.once).toContain('{"x":1}');
+    expect(output.once).toContain('{"day":1}');
+    expect(output.once).toBe(output.twice);
 });
 
 test('legacy hosts leave a regex widget intact even when it contains the unchanged JSON footer', async ({ page }) => {
@@ -104,4 +110,30 @@ test('legacy hosts leave a regex widget intact even when it contains the unchang
     await expect(page.locator('#chat details pre')).toContainText('"version"');
     await expect(page.locator('#chat [data-life-state-output-hidden]')).toHaveCount(0);
     expect(await page.evaluate(() => window.fixture.ctx.extensionSettings.regex)).toEqual([widget]);
+});
+
+test('streaming keeps incomplete output readable, and a swipe never restores the old hidden payload', async ({ page }) => {
+    await start(page);
+    await page.evaluate(() => {
+        const { ctx } = window.fixture;
+        ctx.chat[0].mes = '新正文\n<life_state>{"new":"本轮数据"}';
+        ctx.updateMessageBlock(0, ctx.chat[0]);
+    });
+    await expect(page.locator('#chat [data-life-state-output-hidden]')).toHaveCount(0);
+    await expect(page.locator('#chat .mes_text')).toContainText('本轮数据', { useInnerText: true });
+    await page.evaluate(() => {
+        const { ctx } = window.fixture;
+        ctx.chat[0].mes += '</life_state>';
+        ctx.updateMessageBlock(0, ctx.chat[0]);
+    });
+    await expect(page.locator('#chat [data-life-state-output-hidden]')).toHaveCount(1);
+    await expect(page.locator('#chat .mes_text')).not.toContainText('本轮数据', { useInnerText: true });
+    await expect(page.locator('#chat .mes_text')).toContainText('本轮数据');
+    await page.evaluate(() => {
+        const { ctx } = window.fixture;
+        ctx.chat[0].swipe_id = 1; ctx.chat[0].mes = '另一分支';
+        ctx.updateMessageBlock(0, ctx.chat[0]);
+    });
+    await expect(page.locator('#chat [data-life-state-output-hidden]')).toHaveCount(0);
+    await expect(page.locator('#chat .mes_text')).toHaveText('另一分支');
 });

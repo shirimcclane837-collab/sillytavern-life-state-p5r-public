@@ -1,17 +1,26 @@
-// Hide remaining protocol output after the host's regex pipeline, without
-// rewriting saved messages, prompts, or the user's regex list and ordering.
+// Hide remaining protocol output after Markdown. Keep its text in the rendered
+// result as well as in the saved message: hiding must never become data removal.
 const protocolTags = new Set(['life_state', 'state_handoff', 'story_time']);
 const formatterHooks = new WeakMap();
 const marker = 'data-life-state-output-hidden';
 
-export function stateBlockRanges(text) {
+export function stateBlockRanges(text, { encoded = false } = {}) {
     const ranges = [];
-    const tags = /<\/?([a-z][\w:-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
-    let open = null, literal = null;
+    const tags = /<\/?([a-z][\w:-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>|&lt;\/?(life_state|state_handoff|story_time)\b(?:(?!&gt;)[\s\S])*&gt;/gi;
+    let open = null, literal = null, depth = 0;
     for (const match of String(text).matchAll(tags)) {
-        const name = match[1].toLowerCase(), closing = match[0][1] === '/';
-        if (literal) { if (closing && name === literal) literal = null; continue; }
-        if (!open && !closing && ['script', 'style', 'textarea'].includes(name)) { literal = name; continue; }
+        const escaped = Boolean(match[2]);
+        if (escaped && !encoded) continue;
+        const name = (match[1] || match[2]).toLowerCase(), closing = /^(?:<|&lt;)\//i.test(match[0]);
+        if (literal) {
+            if (!escaped && name === literal) {
+                depth += closing ? -1 : 1;
+                if (!depth) literal = null;
+            }
+            continue;
+        }
+        if (!open && !escaped && !closing && (['script', 'style', 'textarea'].includes(name)
+            || (name === 'span' && match[0].includes(marker)))) { literal = name; depth = 1; continue; }
         if (!protocolTags.has(name)) continue;
         if (!open && !closing) open = { name, start: match.index, contentStart: match.index + match[0].length };
         else if (open?.name === name && closing) {
@@ -22,9 +31,20 @@ export function stateBlockRanges(text) {
     return ranges;
 }
 
-export function stripDisplayStateBlocks(text) {
+export function hideDisplayStateBlocks(text) {
     let result = String(text);
-    for (const range of stateBlockRanges(result).reverse()) result = result.slice(0, range.start) + result.slice(range.end);
+    const visibleTag = value => value.startsWith('<')
+        ? value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : value;
+    for (const range of stateBlockRanges(result, { encoded: true }).reverse()) {
+        // Keep the protocol delimiters as text too. The host sanitizer would
+        // otherwise discard these unknown HTML tags, leaving only their JSON.
+        const content = visibleTag(result.slice(range.start, range.contentStart))
+            + result.slice(range.contentStart, range.contentEnd)
+            + visibleTag(result.slice(range.contentEnd, range.end));
+        result = result.slice(0, range.start)
+            + `<span ${marker} hidden style="display:none!important">${content}</span>`
+            + result.slice(range.end);
+    }
     return result;
 }
 
@@ -35,9 +55,10 @@ function acquireFormatter(formatter) {
         // TauriTavern's registry has no removeHook. One inert hook per registry
         // avoids both accumulating callbacks and removing another extension's hook.
         formatter.addHook((text, context) => {
-            if (!entry.owners.size || context.isUser || context.isSystem || context.isReasoning || context.messageId < 0) return text;
-            return stripDisplayStateBlocks(text);
-        }, { stage: formatter.stage.AFTER_REGEX, order: formatter.order?.LATEST ?? 100 });
+            if (!entry.owners.size || context.isUser || context.isSystem || context.isReasoning
+                || !Number.isInteger(Number(context.messageId)) || context.messageId == null || context.messageId < 0) return text;
+            return hideDisplayStateBlocks(text);
+        }, { stage: formatter.stage.AFTER_MARKDOWN, order: formatter.order?.LATEST ?? 100 });
         formatterHooks.set(formatter, entry);
     }
     const owner = {};
@@ -106,7 +127,7 @@ function observeRenderedOutput(document, getContext) {
         // particular, never extract JSON from a user's details, pre or article.
         const plain = node => {
             for (let element = node.parentElement; element !== root; element = element.parentElement) {
-                if (!element || element.tagName !== 'P' || element.attributes.length) return false;
+                if (!element || !['P', 'Q', 'EM', 'STRONG', 'BR'].includes(element.tagName) || element.attributes.length) return false;
             }
             return true;
         };
@@ -171,17 +192,18 @@ export function createOutputVisibility({ document, getContext, legacyRule }) {
             const context = getContext();
             const formatter = context?.messageFormatter;
             if (!installed) {
-                if (typeof formatter?.addHook === 'function' && formatter.stage && 'AFTER_REGEX' in formatter.stage) release = acquireFormatter(formatter);
+                if (typeof formatter?.addHook === 'function' && formatter.stage && 'AFTER_MARKDOWN' in formatter.stage) release = acquireFormatter(formatter);
                 else fallback = observeRenderedOutput(document, getContext);
                 installed = true;
             }
             const migrated = removeLegacyRule(context, legacyRule, document);
             await refreshRendered(context, refresh, document);
             fallback?.refresh();
-            return { ready: true, migrated, mode: release ? 'after-regex' : 'rendered-dom' };
+            return { ready: true, migrated, mode: release ? 'after-markdown' : 'rendered-dom' };
         },
         dispose() {
             disposed = true; release?.(); fallback?.dispose();
+            for (const span of document.querySelectorAll(`#chat span[${marker}]`)) span.replaceWith(...span.childNodes);
         },
     };
 }

@@ -3,8 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { readChatMetadata } from '../src/chat-persistence.js';
 
 const payload = JSON.parse(await readFile(new URL('./fixtures/state-update.json', import.meta.url)));
-async function prepare(page, legacy = false) {
-    await page.goto('/');
+async function prepare(page, legacy = false, displayMode = 'normal') {
+    await page.addInitScript(mode => { window.fixtureEncodeTags = mode === 'encoded'; }, displayMode);
+    await page.goto(displayMode === 'legacy' ? '/?legacy-host' : '/');
     await page.waitForFunction(() => window.fixtureReady);
     await page.evaluate(async ({ payload, legacy }) => {
         const core = window.LifeStateContinuity, { ctx, bus } = window.fixture;
@@ -49,6 +50,55 @@ test('stage-only first profile with stamina and reproductive data saves without 
     expect(result.store.stamina_receipts['24:0'].updates['样例人物'].segments).toHaveLength(1);
 });
 
+for (const mode of ['normal', 'encoded', 'legacy']) {
+    test(`hidden state-only reply remains readable and saves across chat reload: ${mode}`, async ({ page }) => {
+        await prepare(page, false, mode);
+        const rendered = await page.evaluate(async () => {
+            const core = window.LifeStateContinuity, { ctx, formatter } = window.fixture;
+            const reply = ctx.chat[24];
+            reply.mes = core.extractLifeState(reply.mes).raw;
+            reply.swipes = [reply.mes, '另一分支']; reply.swipe_id = 0;
+            window.originalReply = reply.mes;
+            let beforeMarkdown = '';
+            formatter.addHook(text => { beforeMarkdown = text; return text; }, { stage: formatter.stage.AFTER_REGEX, order: 200 });
+            ctx.updateMessageBlock(24, reply);
+            await new Promise(resolve => setTimeout(resolve, 0));
+            const root = document.querySelector('#chat [mesid="24"] .mes_text');
+            return { visible: root.innerText.trim(), readable: root.textContent, beforeMarkdown, raw: reply.mes,
+                hidden: root.querySelector('[data-life-state-output-hidden]') !== null };
+        });
+        expect(rendered.hidden).toBe(true);
+        expect(rendered.visible).toBe('');
+        expect(rendered.readable).toContain('"version"');
+        if (mode !== 'legacy') expect(rendered.readable).toContain('<life_state>');
+        expect(rendered.beforeMarkdown).toBe(rendered.raw);
+        const saved = await page.evaluate(async () => {
+            const core = window.LifeStateContinuity, { ctx, bus } = window.fixture;
+            await bus.emit('MESSAGE_RECEIVED', 24);
+            const stored = structuredClone(ctx.chatMetadata.variables[core.CONFIG.variableKey]);
+            await bus.emit('CHAT_CHANGED', ctx.chatId);
+            ctx.updateMessageBlock(24, ctx.chat[24]);
+            return { stored, reloaded: ctx.chatMetadata.variables[core.CONFIG.variableKey],
+                rawUnchanged: ctx.chat[24].mes === window.originalReply && ctx.chat[24].swipes[0] === window.originalReply };
+        });
+        expect(saved.rawUnchanged).toBe(true);
+        expect(saved.stored.has_valid_snapshot).toBe(true);
+        expect(saved.stored.source_message_id).toBe(24);
+        expect(saved.reloaded.snapshot).toEqual(saved.stored.snapshot);
+        expect(saved.reloaded.snapshot.characters['样例人物'].needs.drink.last_at).toMatch(/^D\d+ \d{2}:\d{2}$/);
+        // A later empty swipe must report missing data, never reuse the hidden
+        // previous branch's content as the current model response.
+        const empty = await page.evaluate(async () => {
+            const { ctx } = window.fixture;
+            ctx.chat[24].swipe_id = 1; ctx.chat[24].mes = '';
+            ctx.updateMessageBlock(24, ctx.chat[24]);
+            return window.LifeStateContinuity.processMessage(24);
+        });
+        expect(empty.code).toBe('missing_block');
+        await expect(page.locator('#chat [mesid="24"] .mes_text')).toBeEmpty();
+    });
+}
+
 test('save errors are visible next to a passing format check, and retry saves without a model request', async ({ page }) => {
     await prepare(page);
     await page.locator('.ls-toggle').click();
@@ -63,6 +113,7 @@ test('save errors are visible next to a passing format check, and retry saves wi
     await expect(page.locator('.ls-state-update[data-level]')).toContainText('磁盘暂时不可写');
     await page.locator('[data-action=state-return]').click();
     await expect(page.locator('#life-state-external-response-panel')).toContainText('格式检查通过');
+    await expect(page.locator('#life-state-external-response-panel')).toContainText(/读取来源：聊天原文 · \d+ 个字符 · 1 个完整状态块/);
     await expect(page.locator('#life-state-external-response-panel')).toContainText('保存失败原因：测试：磁盘暂时不可写');
     await page.locator('[data-action=external-response-close]').click();
     await page.evaluate(() => { window.fixture.ctx.saveMetadata = window.originalSave; });
